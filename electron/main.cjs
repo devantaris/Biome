@@ -8,10 +8,13 @@ const {
   nativeImage, screen
 } = require('electron');
 const path = require('path');
+const http = require('http');
+const fs = require('fs');
 
 let mainWindow = null;
 let widgetWindow = null;
 let tray = null;
+let localServerPort = null;
 const isDev = !app.isPackaged;
 
 // ─── App Icon ─────────────────────────────────
@@ -52,7 +55,8 @@ function createWindow() {
   if (isDev) {
     mainWindow.loadURL('http://localhost:3000');
   } else {
-    mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
+    // Serve dist/ via localhost so Firebase Auth works (file:// is not an authorized domain)
+    mainWindow.loadURL(`http://localhost:${localServerPort}`);
   }
 
   // On close/minimize: show widget if setting is enabled
@@ -165,8 +169,44 @@ function createTray() {
   tray.on('double-click', showWindow);
 }
 
+// ─── Local static file server (production only) ──
+function startLocalServer() {
+  return new Promise((resolve) => {
+    const distPath = path.join(__dirname, '../dist');
+    const mimeTypes = {
+      '.html': 'text/html',
+      '.js':   'application/javascript',
+      '.css':  'text/css',
+      '.svg':  'image/svg+xml',
+      '.png':  'image/png',
+      '.ico':  'image/x-icon',
+      '.json': 'application/json',
+      '.woff2':'font/woff2',
+      '.woff': 'font/woff',
+      '.ttf':  'font/ttf',
+    };
+    const server = http.createServer((req, res) => {
+      let filePath = path.join(distPath, req.url.split('?')[0]);
+      // SPA fallback — serve index.html for any unknown route
+      if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
+        filePath = path.join(distPath, 'index.html');
+      }
+      const ext = path.extname(filePath);
+      const contentType = mimeTypes[ext] || 'application/octet-stream';
+      res.writeHead(200, { 'Content-Type': contentType });
+      fs.createReadStream(filePath).pipe(res);
+    });
+    server.listen(0, '127.0.0.1', () => {
+      resolve(server.address().port);
+    });
+  });
+}
+
 // ─── App Lifecycle ────────────────────────────
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
+  if (!isDev) {
+    localServerPort = await startLocalServer();
+  }
   createWindow();
   createTray();
 
