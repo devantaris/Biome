@@ -40,7 +40,13 @@ export default function App() {
     actions.importData(JSON.stringify(cloudState));
   }, [actions]);
 
-  useCloudSync(user, state, actions, handleCloudLoad);
+  const { forceFlush } = useCloudSync(user, state, actions, handleCloudLoad);
+
+  // ─── Safe logout: flush to Firestore first, THEN sign out ───
+  const handleLogout = useCallback(async () => {
+    await forceFlush(); // save everything before leaving
+    await logout();
+  }, [forceFlush, logout]);
 
   // ─── Onboarding (shown once per device after login) ──────────────
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -114,7 +120,7 @@ export default function App() {
       {isElectron && <TitleBar />}
 
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar view={view} setView={setView} state={state} user={user} onLogout={logout} />
+        <Sidebar view={view} setView={setView} state={state} user={user} onLogout={handleLogout} />
 
         <main className="flex-1 overflow-y-auto p-6 md:p-8 scroll-smooth">
           <AnimatePresence>
@@ -143,7 +149,7 @@ export default function App() {
               <Challenges key="challenges" state={state} actions={actions} />
             )}
             {view === 'settings' && (
-              <Settings key="settings" state={state} actions={actions} onLogout={logout} />
+              <Settings key="settings" state={state} actions={actions} onLogout={handleLogout} />
             )}
           </AnimatePresence>
         </main>

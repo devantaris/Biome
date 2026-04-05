@@ -1,18 +1,17 @@
 // ============================================
 // Biome — Firebase Initialization
-// Config loaded from environment variables
 // ============================================
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  apiKey: "AIzaSyDWOjNFiMGwB85OOC2n7bYjTvmqkc5ez3M",
+  authDomain: "biome-focusforest.firebaseapp.com",
+  projectId: "biome-focusforest",
+  storageBucket: "biome-focusforest.firebasestorage.app",
+  messagingSenderId: "218182942685",
+  appId: "1:218182942685:web:772547821bab9785530034",
 };
 
 // Initialize once (hot-reload safe)
