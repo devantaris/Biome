@@ -1,0 +1,35 @@
+{
+  "name": "Biome",
+  "short_name": "Biome",
+  "description": "Build your own world, one focus session at a time. Earn plants and place them in your biome.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#040c07",
+  "theme_color": "#059669",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["productivity", "lifestyle"],
+  "shortcuts": [
+    {
+      "name": "Start Focus Session",
+      "short_name": "Focus",
+      "description": "Jump straight to the timer",
+      "url": "/?view=timer",
+      "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
+    },
+    {
+      "name": "My Biome",
+      "short_name": "Biome",
+      "description": "View and manage your biome world",
+      "url": "/?view=forest",
+      "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
+    }
+  ]
+}

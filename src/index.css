@@ -1,0 +1,287 @@
+/* ============================================
+   Focus Forest Pro — Premium Dark Theme v2
+   Market-ready aesthetics with refined typography
+   ============================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+/* ─── Theme Tokens ─────────────────────────── */
+@theme {
+  /* Premium typography */
+  --font-sans: "DM Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-display: "Space Grotesk", sans-serif;
+
+  /* Dark forest backgrounds — deeper, richer */
+  --color-deep: #020a05;
+  --color-base: #061210;
+  --color-surface: #0a1c14;
+  --color-elevated: #10281c;
+  --color-overlay: #153520;
+  --color-hover: #1a4028;
+
+  /* Green accent scale — more saturated */
+  --color-forest-50: #ecfdf5;
+  --color-forest-100: #d1fae5;
+  --color-forest-200: #a7f3d0;
+  --color-forest-300: #6ee7b7;
+  --color-forest-400: #34d399;
+  --color-forest-500: #10b981;
+  --color-forest-600: #059669;
+  --color-forest-700: #047857;
+  --color-forest-800: #065f46;
+  --color-forest-900: #064e3b;
+
+  /* Gold accent — warmer */
+  --color-gold-400: #fbbf24;
+  --color-gold-500: #f59e0b;
+
+  /* Danger */
+  --color-danger-400: #f87171;
+  --color-danger-500: #ef4444;
+
+  /* Glass effect colors — more refined */
+  --color-glass: rgba(10, 28, 20, 0.6);
+  --color-glass-light: rgba(10, 28, 20, 0.35);
+  --color-glass-border: rgba(52, 211, 153, 0.06);
+  --color-glass-border-light: rgba(52, 211, 153, 0.12);
+}
+
+/* ─── Base Styles ──────────────────────────── */
+@layer base {
+  html {
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  body {
+    @apply bg-deep text-forest-100 font-sans antialiased;
+    overflow: hidden;
+    letter-spacing: -0.01em;
+  }
+
+  /* Smooth scrolling */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(52, 211, 153, 0.12) transparent;
+  }
+
+  /* Better focus rings */
+  :focus-visible {
+    outline: 2px solid rgba(52, 211, 153, 0.4);
+    outline-offset: 2px;
+    border-radius: 8px;
+  }
+
+  /* Smooth transitions everywhere */
+  button, a, input, select {
+    transition: all 0.15s ease;
+  }
+}
+
+/* ─── Custom Scrollbar ─────────────────────── */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(52, 211, 153, 0.1);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(52, 211, 153, 0.2);
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* ─── Glassmorphism ────────────────────────── */
+.glass-card {
+  background: var(--color-glass);
+  backdrop-filter: blur(20px) saturate(1.2);
+  -webkit-backdrop-filter: blur(20px) saturate(1.2);
+  border: 1px solid var(--color-glass-border);
+  border-radius: 1rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.glass-card:hover {
+  border-color: var(--color-glass-border-light);
+}
+
+/* ─── Title Bar ────────────────────────────── */
+.titlebar-drag {
+  -webkit-app-region: drag;
+}
+
+.titlebar-no-drag {
+  -webkit-app-region: no-drag;
+}
+
+/* ─── Forest World Grid ────────────────────── */
+.forest-grid {
+  background-image: radial-gradient(circle at 1px 1px, rgba(52, 211, 153, 0.03) 1px, transparent 0);
+  background-size: 40px 40px;
+}
+
+/* ─── Glow Effects ─────────────────────────── */
+.glow-green {
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.1), 0 0 40px rgba(16, 185, 129, 0.05);
+}
+
+.glow-green-strong {
+  box-shadow: 0 0 30px rgba(16, 185, 129, 0.15), 0 0 60px rgba(16, 185, 129, 0.08);
+}
+
+/* ─── Gradient Text ────────────────────────── */
+.gradient-text {
+  background: linear-gradient(135deg, #6ee7b7, #34d399, #10b981);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Animations ───────────────────────────── */
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 15px rgba(16, 185, 129, 0.1); }
+  50% { box-shadow: 0 0 30px rgba(16, 185, 129, 0.25); }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2.5s ease-in-out infinite;
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.25s ease-out;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-6px); }
+}
+
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, transparent, rgba(52, 211, 153, 0.04), transparent);
+  background-size: 200% 100%;
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+@keyframes breathe {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+.animate-breathe {
+  animation: breathe 3s ease-in-out infinite;
+}
+
+/* ─── Select / Input Styling ─────────────── */
+select, input[type="text"], input[type="number"], textarea {
+  color-scheme: dark;
+  font-family: "DM Sans", sans-serif;
+}
+
+select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2334d399' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px !important;
+}
+
+select option {
+  background: #0a1c14;
+  color: #d1fae5;
+  padding: 8px;
+}
+
+/* ─── Tabular Numbers ──────────────────────── */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─── Range Input ──────────────────────────── */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(52, 211, 153, 0.08);
+  outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #10b981;
+  cursor: pointer;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+  transition: box-shadow 0.15s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  box-shadow: 0 0 16px rgba(16, 185, 129, 0.5);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #10b981;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+}
+
+/* ─── Elevation System ─────────────────────── */
+.shadow-forest {
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.3),
+    0 4px 12px rgba(0, 0, 0, 0.2),
+    0 0 0 1px rgba(52, 211, 153, 0.04);
+}
+
+.shadow-forest-lg {
+  box-shadow:
+    0 4px 6px rgba(0, 0, 0, 0.3),
+    0 12px 40px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(52, 211, 153, 0.05);
+}
+
+/* ─── Loading Pulse ────────────────────────── */
+@keyframes loading-pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.6; }
+}
+
+.loading-pulse {
+  animation: loading-pulse 1.5s ease-in-out infinite;
+}

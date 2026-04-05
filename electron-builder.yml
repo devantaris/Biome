@@ -1,0 +1,31 @@
+appId: com.focusforest.app
+productName: Focus Forest
+copyright: Copyright © 2026 Focus Forest
+
+directories:
+  output: release
+  buildResources: resources
+
+files:
+  - dist/**/*
+  - electron/**/*
+  - package.json
+
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  icon: resources/icon.ico
+  artifactName: "Focus-Forest-${version}-Setup.${ext}"
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  deleteAppDataOnUninstall: false
+  shortcutName: Focus Forest
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+
+asar: true

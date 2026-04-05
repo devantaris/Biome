@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Focus Widget</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: transparent;
+      -webkit-app-region: drag;
+      user-select: none;
+      overflow: hidden;
+    }
+    .widget {
+      width: 200px;
+      background: rgba(4, 12, 7, 0.92);
+      border: 1px solid rgba(52, 211, 153, 0.2);
+      border-radius: 16px;
+      backdrop-filter: blur(20px);
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(52,211,153,0.1);
+    }
+    .row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .label {
+      font-size: 9px;
+      font-weight: 700;
+      color: #4b7a5e;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .timer {
+      font-size: 22px;
+      font-weight: 800;
+      color: #a7f3d0;
+      letter-spacing: -1px;
+      line-height: 1;
+    }
+    .item-icon { font-size: 18px; }
+    .status {
+      font-size: 9px;
+      font-weight: 700;
+      color: #059669;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+    .status.idle { color: #4b7a5e; }
+    .status.break { color: #f59e0b; }
+    .progress-bar {
+      height: 3px;
+      background: rgba(52,211,153,0.15);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #059669, #34d399);
+      border-radius: 2px;
+      transition: width 1s linear;
+    }
+    .btn-row {
+      display: flex;
+      gap: 6px;
+      -webkit-app-region: no-drag;
+    }
+    .btn {
+      flex: 1;
+      padding: 5px;
+      border: 1px solid rgba(52,211,153,0.2);
+      background: rgba(52,211,153,0.08);
+      color: #6ee7b7;
+      border-radius: 8px;
+      font-size: 9px;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      transition: background 0.15s;
+    }
+    .btn:hover { background: rgba(52,211,153,0.18); }
+    .btn.open { color: #a7f3d0; }
+    .btn.hide { color: #4b7a5e; }
+  </style>
+</head>
+<body>
+  <div class="widget">
+    <div class="row">
+      <span class="label" id="status-label">Idle</span>
+      <span class="item-icon" id="item-icon">🌲</span>
+    </div>
+    <div class="timer" id="timer-display">--:--</div>
+    <div class="progress-bar">
+      <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn open" onclick="openMain()">Open App</button>
+      <button class="btn hide" onclick="hideWidget()">Hide</button>
+    </div>
+  </div>
+
+  <script>
+    function pad(n) { return String(n).padStart(2, '0'); }
+
+    function openMain() {
+      window.widgetAPI?.openMainWindow();
+    }
+    function hideWidget() {
+      window.widgetAPI?.hideWidget();
+    }
+
+    // Listen for timer state updates from main process
+    if (window.widgetAPI?.onTimerUpdate) {
+      window.widgetAPI.onTimerUpdate((data) => {
+        const { timeLeft, phase, progress, itemIcon } = data;
+
+        const mins = Math.floor(timeLeft / 60);
+        const secs = timeLeft % 60;
+        document.getElementById('timer-display').textContent =
+          timeLeft > 0 ? `${pad(mins)}:${pad(secs)}` : '--:--';
+
+        const statusEl = document.getElementById('status-label');
+        statusEl.textContent =
+          phase === 'focusing' ? 'Focusing' :
+          phase === 'break' ? 'Break' : 'Idle';
+        statusEl.className = `label ${phase === 'idle' ? 'idle' : phase === 'break' ? 'break' : ''}`;
+
+        document.getElementById('progress-fill').style.width = `${progress || 0}%`;
+        document.getElementById('item-icon').textContent = itemIcon || '🌲';
+      });
+    }
+  </script>
+</body>
+</html>
