@@ -1,30 +1,34 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Biome — Build your own world, one focus session at a time. A productivity app with Pomodoro timer, world-building, task management, achievements, and real-time leaderboards." />
-    <meta name="theme-color" content="#040c07" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="manifest" href="/manifest.json" />
-    <!-- Apple PWA support -->
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Biome" />
-    <meta name="mobile-web-app-capable" content="yes" />
-    <!-- CSP removed: Firebase auth requires dynamic script loading from googleapis.com -->
-    <title>Biome — Build Your World</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-    <!-- Service Worker registration for PWA / offline support -->
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js').catch(console.warn);
-        });
-      }
-    </script>
-  </body>
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description"
+    content="Biome - Build your own world, one focus session at a time. A productivity app with Pomodoro timer, world-building, task management, achievements, and real-time leaderboards." />
+  <meta name="theme-color" content="#040c07" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="manifest" href="/manifest.json" />
+  <!-- Apple PWA support -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Biome" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <!-- CSP removed: Firebase auth requires dynamic script loading from googleapis.com -->
+  <title>Biome - Build Your World</title>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+  <!-- Service Worker registration for PWA / offline support -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(console.warn);
+      });
+    }
+  </script>
+</body>
+
 </html>
