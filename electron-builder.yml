@@ -1,6 +1,6 @@
-appId: com.focusforest.app
-productName: Focus Forest
-copyright: Copyright © 2026 Focus Forest
+appId: com.biome.app
+productName: Biome
+copyright: Copyright © 2026 Devansh Kumar
 
 directories:
   output: release
@@ -17,14 +17,14 @@ win:
       arch:
         - x64
   icon: resources/icon.ico
-  artifactName: "Focus-Forest-${version}-Setup.${ext}"
+  artifactName: "Biome-${version}-Setup.${ext}"
 
 nsis:
   oneClick: false
   perMachine: false
   allowToChangeInstallationDirectory: true
   deleteAppDataOnUninstall: false
-  shortcutName: Focus Forest
+  shortcutName: Biome
   createDesktopShortcut: true
   createStartMenuShortcut: true
 
