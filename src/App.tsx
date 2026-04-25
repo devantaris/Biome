@@ -25,6 +25,7 @@ import Settings from './components/Settings';
 import ProfileView from './components/ProfileView';
 import CalendarView from './components/Calendar';
 import AuthGate from './components/AuthGate';
+import MobileNavBar from './components/MobileNavBar';
 
 
 export default function App() {
@@ -100,10 +101,14 @@ export default function App() {
       {isElectron && <TitleBar />}
 
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar view={view} setView={setView} state={state} user={user} onLogout={handleLogout} />
+        {/* Hidden on mobile, visible on md+ */}
+        <div className="hidden md:flex">
+          <Sidebar view={view} setView={setView} state={state} user={user} onLogout={handleLogout} />
+        </div>
 
-        <main className="flex-1 overflow-y-auto p-6 md:p-8 scroll-smooth">
-          <AnimatePresence>
+        {/* Add pb-20 on mobile to account for MobileNavBar */}
+        <main className="flex-1 overflow-y-auto p-4 md:p-8 pb-20 md:pb-8 scroll-smooth">
+          <AnimatePresence mode="wait">
             {view === 'dashboard' && (
               <Dashboard key="dashboard" state={state} actions={actions} setView={setView} />
             )}
@@ -137,6 +142,8 @@ export default function App() {
           </AnimatePresence>
         </main>
       </div>
+
+      <MobileNavBar view={view} setView={setView} />
 
       {/* Earned-item inventory toast */}
       <AnimatePresence>
