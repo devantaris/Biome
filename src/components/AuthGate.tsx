@@ -23,7 +23,7 @@ const FEATURES = [
 
 export default function AuthGate({ onSignIn, loading, error }: AuthGateProps) {
   return (
-    <div className="min-h-screen bg-deep flex flex-col items-center justify-center relative overflow-hidden">
+    <div className="min-h-screen bg-deep flex flex-col items-center justify-center relative overflow-x-hidden overflow-y-auto py-12">
 
       {/* Background orbs */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
