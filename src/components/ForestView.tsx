@@ -132,12 +132,12 @@ export default function ForestView({ state, actions }: ForestViewProps) {
   }, [livingItems]);
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="h-full flex flex-col gap-4"
-    >
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="h-full flex flex-col gap-4 min-h-0 min-w-0"
+      >
       {/* ─── Header ─── */}
       <header className="flex items-end justify-between flex-shrink-0">
         <div>
@@ -227,9 +227,9 @@ export default function ForestView({ state, actions }: ForestViewProps) {
       </AnimatePresence>
 
       {/* ─── Forest World Grid ─── */}
-      <div className="glass-card overflow-hidden relative flex-shrink-0">
+      <div className="glass-card relative flex-1 min-h-[300px] flex flex-col min-h-0 min-w-0">
         {state.forest.length === 0 && state.inventory.length === 0 ? (
-          <div className="flex items-center justify-center py-24">
+          <div className="flex flex-1 items-center justify-center py-24">
             <div className="text-center">
               <motion.div
                 animate={{ y: [0, -8, 0] }}
@@ -243,14 +243,15 @@ export default function ForestView({ state, actions }: ForestViewProps) {
             </div>
           </div>
         ) : (
-          <div className="p-2">
-            <div
-              className="grid gap-0"
-              style={{
-                gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`,
-                aspectRatio: `${gridSize} / ${Math.ceil(gridSize / 2)}`,
-              }}
-            >
+          <div className="flex-1 overflow-auto custom-scrollbar p-2 md:p-4">
+            <div className="min-w-[600px] md:min-w-[700px] max-w-5xl mx-auto pb-4">
+              <div
+                className="grid gap-0"
+                style={{
+                  gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`,
+                  aspectRatio: `${gridSize} / ${Math.ceil(gridSize / 2)}`,
+                }}
+              >
               {Array.from({ length: totalTiles }).map((_, idx) => {
                 const x = idx % gridSize;
                 const y = Math.floor(idx / gridSize);
