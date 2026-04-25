@@ -59,12 +59,17 @@ Unlike apps that just plant a generic tree and move on, Biome gives you full cre
 - Auto-saves every 3 seconds to Firestore
 - Works offline (PWA-ready with service worker)
 
+### 📱 Progressive Web App (PWA)
+- Full mobile-responsive UI with custom glassmorphic bottom navigation bar
+- Add to Home Screen on iOS (Safari) and Android (Chrome)
+- Seamless offline support with Service Workers
+- Fluid grid layouts and safe-area adjustments for modern phone displays
+
 ### 🖥️ Desktop-First (Electron)
 - Custom frameless window with native title bar controls
 - **Floating Mini Widget** — when minimized, a small glass overlay shows your live timer countdown
 - System tray with quick-start shortcuts
 - Global shortcut: `Ctrl+Shift+F` to bring the app to focus
-- Installable as a PWA on Android/iPhone from Chrome/Safari
 
 ---
 
