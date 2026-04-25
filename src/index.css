@@ -55,8 +55,18 @@
 
   body {
     @apply bg-deep text-forest-100 font-sans antialiased;
-    overflow: hidden;
+    /* Desktop: overflow is managed by inner flex containers.
+       Mobile (< md): allow normal body scroll so pages aren't trapped. */
+    overflow-x: hidden;
+    overflow-y: auto;
     letter-spacing: -0.01em;
+  }
+
+  /* Re-lock overflow on desktop where the app uses a fixed h-screen shell */
+  @media (min-width: 768px) {
+    body {
+      overflow: hidden;
+    }
   }
 
   /* Smooth scrolling */

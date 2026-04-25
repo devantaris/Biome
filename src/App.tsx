@@ -97,17 +97,17 @@ export default function App() {
 
   // ─── Main app ─────────────────────────────────────────────────────
   return (
-    <div className="h-screen flex flex-col bg-deep overflow-hidden">
+    <div className="min-h-screen md:h-screen flex flex-col bg-deep md:overflow-hidden">
       {isElectron && <TitleBar />}
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 md:overflow-hidden">
         {/* Hidden on mobile, visible on md+ */}
         <div className="hidden md:flex">
           <Sidebar view={view} setView={setView} state={state} user={user} onLogout={handleLogout} />
         </div>
 
         {/* Add pb-20 on mobile to account for MobileNavBar */}
-        <main className="flex-1 overflow-y-auto p-4 md:p-8 pb-20 md:pb-8 scroll-smooth flex flex-col min-h-0 min-w-0 relative">
+        <main className="flex-1 p-4 md:p-8 pb-24 md:pb-8 md:overflow-y-auto scroll-smooth flex flex-col min-h-0 min-w-0 relative">
           <AnimatePresence mode="wait">
             {view === 'dashboard' && (
               <Dashboard key="dashboard" state={state} actions={actions} setView={setView} />
