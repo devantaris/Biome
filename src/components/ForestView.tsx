@@ -338,6 +338,7 @@ export default function ForestView({ state, actions }: ForestViewProps) {
                   </div>
                 );
               })}
+              </div>
             </div>
           </div>
         )}
