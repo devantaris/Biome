@@ -139,10 +139,10 @@ export default function ForestView({ state, actions }: ForestViewProps) {
         className="h-full flex flex-col gap-4 min-h-0 min-w-0"
       >
       {/* ─── Header ─── */}
-      <header className="flex items-end justify-between flex-shrink-0">
+      <header className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-3 flex-shrink-0">
         <div>
           <h2 className="text-3xl font-display font-bold text-forest-100">My Forest World</h2>
-          <p className="text-forest-500">
+          <p className="text-forest-500 mt-1 sm:mt-0">
             {livingItems.length}/{totalTiles} tiles filled
             {state.expansionCount > 0 && ` · Expanded ${state.expansionCount}×`}
             {' · '}{healthPercent}% healthy

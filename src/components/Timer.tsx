@@ -34,7 +34,7 @@ export default function TimerView({ state, timer, timerActions, showReward, clea
       className="flex flex-col items-center justify-center h-full max-w-3xl mx-auto py-4"
     >
       {/* Circular Timer */}
-      <div className="relative w-72 h-72 md:w-80 md:h-80 flex items-center justify-center mb-8">
+      <div className="relative w-full max-w-[288px] aspect-square flex items-center justify-center mb-8">
         <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 300 300">
           {/* Background ring */}
           <circle
@@ -70,7 +70,7 @@ export default function TimerView({ state, timer, timerActions, showReward, clea
         </svg>
 
         {/* Center content */}
-        <div className="text-center z-10">
+        <div className="text-center z-10 w-full px-4">
           <span className="text-6xl md:text-7xl font-display font-bold text-forest-50 block tracking-tight tabular-nums">
             {timer.isActive ? formatTime(timer.timeLeft) : `${timer.selectedDuration}:00`}
           </span>
@@ -84,7 +84,7 @@ export default function TimerView({ state, timer, timerActions, showReward, clea
             )}
           </div>
           {timer.selectedTask && timer.isActive && (
-            <p className="text-[10px] text-forest-500 mt-1 truncate max-w-48">Working on: {timer.selectedTask.title}</p>
+            <p className="text-[10px] text-forest-500 mt-1 truncate max-w-full">Working on: {timer.selectedTask.title}</p>
           )}
         </div>
       </div>

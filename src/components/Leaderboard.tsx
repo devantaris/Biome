@@ -82,20 +82,22 @@ export default function Leaderboard({ state, actions, user }: LeaderboardProps) 
       </header>
 
       {/* Your Rank Card */}
-      <div className="glass-card p-5 bg-gradient-to-r from-forest-600/10 to-forest-500/5">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-forest-500/20 border border-forest-500/30 flex items-center justify-center text-2xl">
-            {state.profile.avatar}
+      <div className="glass-card p-4 sm:p-5 bg-gradient-to-r from-forest-600/10 to-forest-500/5">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <div className="flex items-center gap-4 w-full sm:w-auto">
+            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-forest-500/20 border border-forest-500/30 flex items-center justify-center text-xl sm:text-2xl flex-shrink-0">
+              {state.profile.avatar}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] sm:text-xs font-bold text-forest-500 uppercase">Your Ranking</p>
+              <p className="text-xl sm:text-2xl font-display font-bold text-forest-100 truncate">
+                #{playerRank} <span className="text-xs sm:text-sm text-forest-400 font-normal">of {leaderboard.length}</span>
+              </p>
+            </div>
           </div>
-          <div className="flex-1">
-            <p className="text-xs font-bold text-forest-500 uppercase">Your Ranking</p>
-            <p className="text-2xl font-display font-bold text-forest-100">
-              #{playerRank} <span className="text-sm text-forest-400 font-normal">of {leaderboard.length}</span>
-            </p>
-          </div>
-          <div className="text-right">
-            <p className="text-xs font-bold text-forest-500 uppercase">This Week</p>
-            <p className="text-xl font-display font-bold text-forest-200">{formatDuration(playerWeeklyMinutes)}</p>
+          <div className="sm:ml-auto w-full sm:w-auto bg-elevated/50 sm:bg-transparent p-3 sm:p-0 rounded-xl sm:rounded-none sm:text-right">
+            <p className="text-[10px] sm:text-xs font-bold text-forest-500 uppercase">This Week</p>
+            <p className="text-lg sm:text-xl font-display font-bold text-forest-200">{formatDuration(playerWeeklyMinutes)}</p>
           </div>
         </div>
       </div>

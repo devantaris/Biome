@@ -33,14 +33,14 @@ export default function Dashboard({ state, actions, setView }: DashboardProps) {
       className="space-y-6 max-w-5xl"
     >
       {/* Header */}
-      <header className="flex justify-between items-start">
+      <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-3xl font-display font-bold text-forest-100">{getGreeting()}, {state.profile.name}! 🌲</h2>
           <p className="text-forest-500 mt-1">Here's how your forest is growing today.</p>
         </div>
         <button
           onClick={() => setView('timer')}
-          className="bg-gradient-to-r from-forest-600 to-forest-500 text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 shadow-2xl shadow-forest-900/40 hover:from-forest-500 hover:to-forest-400 hover:shadow-forest-600/20 transition-all group"
+          className="w-full sm:w-auto bg-gradient-to-r from-forest-600 to-forest-500 text-white px-6 py-3 rounded-2xl font-bold flex items-center justify-center gap-2 shadow-2xl shadow-forest-900/40 hover:from-forest-500 hover:to-forest-400 hover:shadow-forest-600/20 transition-all group"
         >
           <Zap className="w-4 h-4 fill-current group-hover:scale-110 transition-transform" />
           Quick Focus

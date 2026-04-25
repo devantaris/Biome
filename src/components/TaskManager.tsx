@@ -151,7 +151,7 @@ export default function TaskManager({ state, actions }: TaskManagerProps) {
         </div>
 
         {/* Day label + jump to today */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
           <h2 className="font-display font-bold text-xl text-forest-100">
             {formatDateLabel(activeDate)}
           </h2>
