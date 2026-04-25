@@ -109,6 +109,7 @@ export function useAppState(): { state: AppState; actions: AppActions; newAchiev
         placedAt: Date.now(),
         taskId: invItem.taskId,
         sessionId: invItem.sessionId,
+        size: invItem.size,
       };
 
       const newForest = [...prev.forest, forestItem];
@@ -137,6 +138,15 @@ export function useAppState(): { state: AppState; actions: AppActions; newAchiev
         expansionCount: newExpansionCount,
       };
     });
+  }, []);
+
+  const moveForestItem = useCallback((itemId: string, newX: number, newY: number) => {
+    setState(prev => ({
+      ...prev,
+      forest: prev.forest.map(item => 
+        item.id === itemId ? { ...item, x: newX, y: newY } : item
+      ),
+    }));
   }, []);
 
   const addTask = useCallback((
@@ -288,6 +298,7 @@ export function useAppState(): { state: AppState; actions: AppActions; newAchiev
     addToInventory,
     removeInventoryItem,
     placeInventoryItem,
+    moveForestItem,
     addTask,
     toggleTask,
     deleteTask,
@@ -303,7 +314,7 @@ export function useAppState(): { state: AppState; actions: AppActions; newAchiev
     exportData,
     importData,
   }), [
-    addForestItem, addToInventory, removeInventoryItem, placeInventoryItem,
+    addForestItem, addToInventory, removeInventoryItem, placeInventoryItem, moveForestItem,
     addTask, toggleTask, deleteTask, updateTaskMinutes, addSession,
     unlockAchievement, updateStreak, updateProfile, updateSettings,
     addXp, completeChallenge, resetAll, exportData, importData,

@@ -90,6 +90,7 @@ export function useTimer(state: AppState, actions: AppActions): { timer: TimerSt
       rarity: selectedItem.rarity,
       earnedAt: Date.now(),
       taskId: selectedTask?.id,
+      size: selectedItem.size,
     };
     actions.addToInventory(inventoryItem);
 
@@ -258,6 +259,14 @@ export function useTimer(state: AppState, actions: AppActions): { timer: TimerSt
     }
   }, [timeLeft, phase, progress, selectedItem.icon]);
 
+  const setDuration = useCallback((mins: number) => {
+    setSelectedDuration(mins);
+    if (selectedItem.minDuration > mins) {
+      const validItems = REWARDS.filter(r => r.type !== 'dead' && r.minDuration <= mins);
+      setSelectedItem(validItems[validItems.length - 1] || REWARDS[0]);
+    }
+  }, [selectedItem]);
+
   const timer: TimerState = {
     timeLeft,
     isActive,
@@ -272,7 +281,7 @@ export function useTimer(state: AppState, actions: AppActions): { timer: TimerSt
   };
 
   const timerActions: TimerActions = {
-    setDuration: setSelectedDuration,
+    setDuration,
     setItem: setSelectedItem,
     setTask: setSelectedTask,
     setSound: setSelectedSound,

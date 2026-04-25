@@ -5,7 +5,7 @@
 export type ItemType = 'plant' | 'tree' | 'structure' | 'dead' | 'special';
 export type Rarity = 'common' | 'rare' | 'epic' | 'legendary';
 export type Priority = 'low' | 'medium' | 'high';
-export type ViewType = 'dashboard' | 'timer' | 'tasks' | 'forest' | 'achievements' | 'leaderboard' | 'challenges' | 'settings' | 'timeline';
+export type ViewType = 'dashboard' | 'timer' | 'tasks' | 'forest' | 'achievements' | 'leaderboard' | 'challenges' | 'settings' | 'timeline' | 'profile';
 export type AchievementCategory = 'growth' | 'focus' | 'streak' | 'tasks' | 'mastery' | 'special';
 export type ChallengeType = 'focus' | 'tasks' | 'streak' | 'forest';
 
@@ -23,6 +23,7 @@ export interface ForestItem {
   placedAt?: number;   // when it was placed in the world
   taskId?: string;
   sessionId?: string;
+  size?: number;       // e.g. 2 means 2x2
 }
 
 export interface RewardItem {
@@ -33,6 +34,7 @@ export interface RewardItem {
   minDuration: number;
   description: string;
   rarity: Rarity;
+  size?: number;
 }
 
 // ─── Inventory ───────────────────────────────
@@ -47,6 +49,7 @@ export interface InventoryItem {
   earnedAt: number;    // timestamp when session completed
   sessionId?: string;
   taskId?: string;
+  size?: number;
 }
 
 // ─── Tasks ───────────────────────────────────
@@ -185,6 +188,7 @@ export interface AppActions {
   // Forest
   addForestItem: (item: ForestItem) => void;
   placeInventoryItem: (inventoryId: string, x: number, y: number) => void;
+  moveForestItem: (itemId: string, newX: number, newY: number) => void;
   removeInventoryItem: (inventoryId: string) => void;
 
   // Tasks

@@ -6,7 +6,7 @@ import { motion } from 'motion/react';
 import {
   BarChart3, Timer, ListTodo, LayoutGrid,
   Trophy, Users, Target, Settings as SettingsIcon,
-  Flame, CalendarDays, Package, LogOut
+  Flame, CalendarDays, Package, LogOut, User as UserIcon
 } from 'lucide-react';
 import type { User } from 'firebase/auth';
 import type { AppState, ViewType } from '../types';
@@ -127,8 +127,14 @@ export default function Sidebar({ view, setView, state, user, onLogout }: Sideba
         ))}
       </nav>
 
-      {/* Settings (bottom) */}
+      {/* Settings & Profile (bottom) */}
       <div className="p-3 border-t border-glass-border">
+        <NavItem
+          icon={<UserIcon />}
+          label="Profile"
+          active={view === 'profile'}
+          onClick={() => setView('profile')}
+        />
         <NavItem
           icon={<SettingsIcon />}
           label="Settings"

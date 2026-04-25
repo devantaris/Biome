@@ -21,6 +21,7 @@ export const REWARDS: RewardItem[] = [
   { id: 'cabin',       name: 'Woodland Cabin',    type: 'structure', icon: '🏡', minDuration: 45, rarity: 'epic',      description: 'A cozy haven built on hours of dedication.' },
   { id: 'shrine',      name: 'Forest Shrine',     type: 'structure', icon: '⛩️', minDuration: 45, rarity: 'epic',      description: 'A sacred place of focus and reflection.' },
   // Legendary
+  { id: 'estate',      name: 'Grand Estate',      type: 'structure', icon: '🏛️', minDuration: 120, rarity: 'legendary', description: 'A massive 2x2 estate for legendary focus.', size: 2 },
   { id: 'castle',      name: 'Focus Fortress',    type: 'structure', icon: '🏰', minDuration: 60, rarity: 'legendary', description: 'An impenetrable monument to your productivity.' },
   { id: 'rainbow',     name: 'Rainbow Arc',       type: 'special',   icon: '🌈', minDuration: 60, rarity: 'legendary', description: 'The spectrum of your unwavering focus.' },
   { id: 'volcano',     name: 'Dormant Volcano',   type: 'special',   icon: '🌋', minDuration: 60, rarity: 'legendary', description: 'Raw power contained by discipline.' },

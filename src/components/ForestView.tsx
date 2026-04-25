@@ -15,21 +15,9 @@ interface ForestViewProps {
 
 type PlacementModeItem = InventoryItem | null;
 
-// ─── Terrain helpers ──────────────────────────
-function isPathTile(x: number, y: number, size: number): boolean {
-  const center = Math.floor(size / 2);
-  const pathX = Math.floor(center + Math.sin(y * 0.7) * 2);
-  return Math.abs(x - pathX) <= 0;
-}
-function isWaterTile(x: number, y: number, size: number): boolean {
-  const px = Math.floor(size * 0.8);
-  const py = Math.floor(size * 0.8);
-  const dx = x - px, dy = y - py;
-  return (dx * dx + dy * dy) <= 2;
-}
-
 export default function ForestView({ state, actions }: ForestViewProps) {
   const [placingItem, setPlacingItem] = useState<PlacementModeItem>(null);
+  const [movingItem, setMovingItem] = useState<ForestItem | null>(null);
   const [hoveredTile, setHoveredTile] = useState<{ x: number; y: number } | null>(null);
   const [expansionFlash, setExpansionFlash] = useState(false);
   const [showInventoryHelp, setShowInventoryHelp] = useState(false);
@@ -46,58 +34,96 @@ export default function ForestView({ state, actions }: ForestViewProps) {
   // Build grid lookup map: "x,y" → ForestItem
   const gridMap = useMemo(() => {
     const map = new Map<string, ForestItem>();
-    state.forest.forEach(item => {
-      const key = `${item.x},${item.y}`;
-      if (!map.has(key)) {
-        map.set(key, item);
+
+    const tryPlace = (item: ForestItem, targetX: number, targetY: number) => {
+      if (targetX < 0 || targetY < 0 || targetX >= gridSize || targetY >= gridSize) return false;
+      if (item.size === 2) {
+        if (targetX + 1 >= gridSize || targetY + 1 >= gridSize) return false;
+        if (map.has(`${targetX},${targetY}`) || map.has(`${targetX+1},${targetY}`) ||
+            map.has(`${targetX},${targetY+1}`) || map.has(`${targetX+1},${targetY+1}`)) return false;
+        map.set(`${targetX},${targetY}`, item);
+        map.set(`${targetX+1},${targetY}`, item);
+        map.set(`${targetX},${targetY+1}`, item);
+        map.set(`${targetX+1},${targetY+1}`, item);
+        return true;
       } else {
-        // collision — find nearest open spot
-        for (let r = 1; r < gridSize; r++) {
-          let found = false;
-          for (let dx = -r; dx <= r && !found; dx++) {
-            for (let dy = -r; dy <= r && !found; dy++) {
-              const nx = ((item.x + dx) % gridSize + gridSize) % gridSize;
-              const ny = ((item.y + dy) % gridSize + gridSize) % gridSize;
-              const nk = `${nx},${ny}`;
-              if (!map.has(nk)) {
-                map.set(nk, item);
-                found = true;
-              }
+        if (map.has(`${targetX},${targetY}`)) return false;
+        map.set(`${targetX},${targetY}`, item);
+        return true;
+      }
+    };
+
+    state.forest.forEach(item => {
+      if (movingItem?.id === item.id) return; // skip item currently being moved
+
+      if (tryPlace(item, item.x, item.y)) return;
+
+      // collision — find nearest open spot
+      for (let r = 1; r < gridSize; r++) {
+        let found = false;
+        for (let dx = -r; dx <= r && !found; dx++) {
+          for (let dy = -r; dy <= r && !found; dy++) {
+            const nx = ((item.x + dx) % gridSize + gridSize) % gridSize;
+            const ny = ((item.y + dy) % gridSize + gridSize) % gridSize;
+            if (tryPlace(item, nx, ny)) {
+              found = true;
             }
           }
-          if (found) break;
         }
+        if (found) break;
       }
     });
     return map;
-  }, [state.forest, gridSize]);
+  }, [state.forest, gridSize, movingItem]);
 
   // ─── Placement actions ─────────────────────
   const selectForPlacement = useCallback((item: InventoryItem) => {
+    setMovingItem(null);
     setPlacingItem(item);
   }, []);
 
   const cancelPlacement = useCallback(() => {
     setPlacingItem(null);
+    setMovingItem(null);
   }, []);
 
   const handleTileClick = useCallback((x: number, y: number) => {
-    if (!placingItem) return;
-    const key = `${x},${y}`;
-    if (gridMap.has(key)) return; // tile occupied
-
-    // Check if this placement will trigger expansion
-    const livingCount = livingItems.length + 1; // after this placement
-    const willExpand = livingCount >= totalTiles && placingItem.type !== 'dead';
-
-    actions.placeInventoryItem(placingItem.id, x, y);
-    setPlacingItem(null);
-
-    if (willExpand) {
-      setExpansionFlash(true);
-      setTimeout(() => setExpansionFlash(false), 3000);
+    if (!placingItem && !movingItem) {
+      const clickedItem = gridMap.get(`${x},${y}`);
+      if (clickedItem && clickedItem.type !== 'dead') {
+        setMovingItem(clickedItem);
+      }
+      return;
     }
-  }, [placingItem, gridMap, livingItems.length, totalTiles, actions]);
+
+    const activeItem = placingItem || movingItem;
+    if (!activeItem) return;
+
+    if (activeItem.size === 2) {
+      if (x + 1 >= gridSize || y + 1 >= gridSize) return;
+      if (gridMap.has(`${x},${y}`) || gridMap.has(`${x+1},${y}`) ||
+          gridMap.has(`${x},${y+1}`) || gridMap.has(`${x+1},${y+1}`)) return;
+    } else {
+      if (gridMap.has(`${x},${y}`)) return;
+    }
+
+    if (placingItem) {
+      // Check if this placement will trigger expansion
+      const livingCount = livingItems.length + 1; // after this placement
+      const willExpand = livingCount >= totalTiles && placingItem.type !== 'dead';
+
+      actions.placeInventoryItem(placingItem.id, x, y);
+      setPlacingItem(null);
+
+      if (willExpand) {
+        setExpansionFlash(true);
+        setTimeout(() => setExpansionFlash(false), 3000);
+      }
+    } else if (movingItem) {
+      actions.moveForestItem(movingItem.id, x, y);
+      setMovingItem(null);
+    }
+  }, [placingItem, movingItem, gridMap, livingItems.length, totalTiles, gridSize, actions]);
 
   const rarityBreakdown = useMemo(() => {
     const counts: Record<string, number> = { common: 0, rare: 0, epic: 0, legendary: 0 };
@@ -122,12 +148,12 @@ export default function ForestView({ state, actions }: ForestViewProps) {
             {' · '}{healthPercent}% healthy
           </p>
         </div>
-        {placingItem && (
+        {(placingItem || movingItem) && (
           <button
             onClick={cancelPlacement}
             className="flex items-center gap-2 px-4 py-2 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl font-bold text-sm hover:bg-red-500/20 transition-all"
           >
-            <X className="w-4 h-4" /> Cancel Placement
+            <X className="w-4 h-4" /> Cancel {placingItem ? 'Placement' : 'Move'}
           </button>
         )}
       </header>
@@ -171,25 +197,33 @@ export default function ForestView({ state, actions }: ForestViewProps) {
         )}
       </AnimatePresence>
 
-      {/* ─── Placement mode indicator ─── */}
+      {/* ─── Placement/Move mode indicator ─── */}
       <AnimatePresence>
-        {placingItem && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="glass-card p-3 flex items-center gap-3 border-forest-500/30 bg-forest-500/5 flex-shrink-0"
-          >
-            <span className="text-3xl">{placingItem.icon}</span>
-            <div>
-              <p className="font-bold text-forest-200 text-sm">Placement Mode — Click any green tile to plant</p>
-              <p className="text-xs text-forest-500">{placingItem.name} · <span className={RARITY_COLORS[placingItem.rarity]}>{placingItem.rarity}</span></p>
-            </div>
-            <div className="ml-auto flex items-center gap-1 text-xs text-forest-500 animate-pulse">
-              <span className="w-2 h-2 rounded-full bg-forest-400 inline-block"></span> Select a tile
-            </div>
-          </motion.div>
-        )}
+        {(placingItem || movingItem) && (() => {
+          const activeItem = placingItem || movingItem;
+          if (!activeItem) return null;
+          return (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className={`glass-card p-3 flex items-center gap-3 border flex-shrink-0 ${placingItem ? 'border-forest-500/30 bg-forest-500/5' : 'border-blue-500/30 bg-blue-500/5'}`}
+            >
+              <span className="text-3xl">{activeItem.icon}</span>
+              <div>
+                <p className={`font-bold text-sm ${placingItem ? 'text-forest-200' : 'text-blue-200'}`}>
+                  {placingItem ? 'Placement Mode' : 'Move Mode'} — Click anywhere to drop
+                </p>
+                <p className={`text-xs ${placingItem ? 'text-forest-500' : 'text-blue-500'}`}>
+                  {activeItem.name} · <span className={RARITY_COLORS[activeItem.rarity]}>{activeItem.rarity}</span>
+                </p>
+              </div>
+              <div className={`ml-auto flex items-center gap-1 text-xs animate-pulse ${placingItem ? 'text-forest-500' : 'text-blue-500'}`}>
+                <span className={`w-2 h-2 rounded-full inline-block ${placingItem ? 'bg-forest-400' : 'bg-blue-400'}`}></span> Select a tile
+              </div>
+            </motion.div>
+          );
+        })()}
       </AnimatePresence>
 
       {/* ─── Forest World Grid ─── */}
@@ -222,67 +256,67 @@ export default function ForestView({ state, actions }: ForestViewProps) {
                 const y = Math.floor(idx / gridSize);
                 const key = `${x},${y}`;
                 const item = gridMap.get(key);
-                const isPath = isPathTile(x, y, gridSize);
-                const isWater = isWaterTile(x, y, gridSize);
                 const isEmpty = !item;
-                const isPlaceable = placingItem && isEmpty;
-                const isHovered = hoveredTile?.x === x && hoveredTile?.y === y;
+                const activeItem = placingItem || movingItem;
+                const isPlaceable = !!activeItem && isEmpty;
+                
+                let isHoveredArea = false;
+                if (activeItem && hoveredTile) {
+                  if (activeItem.size === 2) {
+                    isHoveredArea = x >= hoveredTile.x && x <= hoveredTile.x + 1 && 
+                                    y >= hoveredTile.y && y <= hoveredTile.y + 1;
+                  } else {
+                    isHoveredArea = hoveredTile.x === x && hoveredTile.y === y;
+                  }
+                }
 
                 let cellBg = '';
-                if (isPath && isEmpty) cellBg = 'bg-amber-900/15';
-                else if (isWater && isEmpty) cellBg = 'bg-blue-900/15';
-                else if (isPlaceable && isHovered) cellBg = 'bg-forest-500/25';
-                else if (isPlaceable) cellBg = 'bg-forest-500/10';
+                if (isPlaceable && isHoveredArea) cellBg = placingItem ? 'bg-forest-500/25' : 'bg-blue-500/25';
+                else if (isPlaceable) cellBg = placingItem ? 'bg-forest-500/10' : 'bg-blue-500/10';
                 else cellBg = 'bg-forest-900/10';
+
+                // Only render the item icon once if it's 2x2 (on its top-left cell)
+                const isItemRoot = item && item.x === x && item.y === y;
 
                 return (
                   <div
                     key={idx}
-                    onClick={() => isPlaceable && handleTileClick(x, y)}
-                    onMouseEnter={() => isPlaceable && setHoveredTile({ x, y })}
+                    onClick={() => isPlaceable ? handleTileClick(x, y) : handleTileClick(x, y)}
+                    onMouseEnter={() => (isPlaceable || item) && setHoveredTile({ x, y })}
                     onMouseLeave={() => setHoveredTile(null)}
                     className={`
                       aspect-square flex items-center justify-center relative group
-                      border border-forest-800/8 transition-all
+                      border border-forest-800/8 transition-all rounded-md m-[1px]
                       ${cellBg}
-                      ${isPlaceable ? 'cursor-pointer' : 'cursor-default'}
-                      ${isPlaceable && isHovered ? 'scale-105 z-10 shadow-lg shadow-forest-500/20' : ''}
+                      ${isPlaceable ? 'cursor-pointer' : item && item.type !== 'dead' && !activeItem ? 'cursor-grab hover:bg-forest-700/30' : 'cursor-default'}
+                      ${isPlaceable && isHoveredArea ? 'z-10 shadow-lg shadow-forest-500/20' : ''}
                     `}
                   >
                     {/* Placement mode pulse effect on empty tiles */}
                     {isPlaceable && (
-                      <div className="absolute inset-0 border border-forest-400/30 rounded-sm animate-pulse pointer-events-none" />
+                      <div className={`absolute inset-0 border rounded-md animate-pulse pointer-events-none ${placingItem ? 'border-forest-400/30' : 'border-blue-400/30'}`} />
                     )}
 
-                    {/* Water shimmer */}
-                    {!item && isWater && (
-                      <motion.span
-                        className="text-[10px]"
-                        animate={{ opacity: [0.3, 0.7, 0.3] }}
-                        transition={{ duration: 2, repeat: Infinity }}
-                      >💧</motion.span>
-                    )}
-
-                    {/* Forest item */}
-                    {item && (
+                    {/* Forest item (rendered only on root cell) */}
+                    {isItemRoot && (
                       <>
                         <motion.span
                           initial={{ scale: 0, rotate: -15 }}
                           animate={{ scale: 1, rotate: 0 }}
                           transition={{ type: 'spring', damping: 12 }}
-                          className={`text-lg md:text-xl lg:text-2xl cursor-default select-none z-20 ${
-                            item.type === 'dead' ? 'grayscale-[0.4] opacity-60' : 'drop-shadow-sm'
-                          }`}
+                          className={`cursor-default select-none z-20 ${
+                            item.type === 'dead' ? 'grayscale-[0.4] opacity-60 text-lg md:text-xl lg:text-2xl' : 'drop-shadow-sm'
+                          } ${item.size === 2 ? 'absolute w-[200%] h-[200%] flex items-center justify-center text-5xl md:text-6xl top-0 left-0 pointer-events-none' : 'text-lg md:text-xl lg:text-2xl pointer-events-none'}`}
                         >
                           {item.icon}
                         </motion.span>
 
                         {/* Rarity ambient glow */}
                         {item.rarity === 'legendary' && (
-                          <div className="absolute inset-0 bg-gold-400/5 rounded animate-pulse-glow pointer-events-none" />
+                          <div className={`absolute ${item.size === 2 ? 'w-[200%] h-[200%] top-0 left-0' : 'inset-0'} bg-gold-400/5 rounded animate-pulse-glow pointer-events-none`} />
                         )}
                         {item.rarity === 'epic' && (
-                          <div className="absolute inset-0 bg-purple-400/4 rounded pointer-events-none" />
+                          <div className={`absolute ${item.size === 2 ? 'w-[200%] h-[200%] top-0 left-0' : 'inset-0'} bg-purple-400/4 rounded pointer-events-none`} />
                         )}
 
                         {/* Tooltip */}
@@ -295,9 +329,9 @@ export default function ForestView({ state, actions }: ForestViewProps) {
                     )}
 
                     {/* Hover ghost preview during placement */}
-                    {isPlaceable && isHovered && placingItem && (
-                      <span className="text-xl opacity-70 animate-pulse">
-                        {placingItem.icon}
+                    {isPlaceable && isHoveredArea && activeItem && hoveredTile?.x === x && hoveredTile?.y === y && (
+                      <span className={`opacity-70 animate-pulse pointer-events-none z-30 ${activeItem.size === 2 ? 'absolute w-[200%] h-[200%] flex items-center justify-center text-5xl md:text-6xl top-0 left-0' : 'text-xl'}`}>
+                        {activeItem.icon}
                       </span>
                     )}
                   </div>

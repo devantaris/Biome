@@ -154,21 +154,26 @@ export default function TimerView({ state, timer, timerActions, showReward, clea
           <div className="glass-card p-4">
             <label className="text-[10px] font-bold text-forest-500 uppercase mb-3 block tracking-wider">Choose What to Grow</label>
             <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-              {REWARDS.filter(r => r.type !== 'dead').map(reward => (
-                <button
-                  key={reward.id}
-                  onClick={() => timerActions.setItem(reward)}
-                  className={`flex-shrink-0 w-14 h-14 rounded-xl flex flex-col items-center justify-center text-xl transition-all border-2 group relative ${
-                    timer.selectedItem.id === reward.id
-                      ? `${RARITY_BG[reward.rarity]} border-forest-400`
-                      : 'bg-elevated border-transparent hover:border-glass-border-light'
-                  }`}
-                  title={`${reward.name} (${reward.rarity})`}
-                >
-                  {reward.icon}
-                  <span className={`text-[7px] font-bold ${RARITY_COLORS[reward.rarity]} uppercase`}>{reward.rarity}</span>
-                </button>
-              ))}
+              {REWARDS.filter(r => r.type !== 'dead').map(reward => {
+                const isLocked = timer.selectedDuration < reward.minDuration;
+                return (
+                  <button
+                    key={reward.id}
+                    disabled={isLocked}
+                    onClick={() => timerActions.setItem(reward)}
+                    className={`flex-shrink-0 w-14 h-14 rounded-xl flex flex-col items-center justify-center text-xl transition-all border-2 group relative ${
+                      isLocked ? 'opacity-30 cursor-not-allowed bg-elevated border-transparent grayscale' :
+                      timer.selectedItem.id === reward.id
+                        ? `${RARITY_BG[reward.rarity]} border-forest-400`
+                        : 'bg-elevated border-transparent hover:border-glass-border-light'
+                    }`}
+                    title={isLocked ? `Requires ${reward.minDuration}m+ focus` : `${reward.name} (${reward.rarity})`}
+                  >
+                    {reward.icon}
+                    <span className={`text-[7px] font-bold ${RARITY_COLORS[reward.rarity]} uppercase`}>{reward.rarity}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
 

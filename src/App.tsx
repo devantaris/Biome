@@ -22,11 +22,10 @@ import Achievements from './components/Achievements';
 import Leaderboard from './components/Leaderboard';
 import Challenges from './components/Challenges';
 import Settings from './components/Settings';
-import Onboarding from './components/Onboarding';
+import ProfileView from './components/ProfileView';
 import CalendarView from './components/Calendar';
 import AuthGate from './components/AuthGate';
 
-const ONBOARDING_KEY = 'biome_onboarded';
 
 export default function App() {
   const { state, actions, newAchievements } = useAppState();
@@ -47,20 +46,6 @@ export default function App() {
     await forceFlush(); // save everything before leaving
     await logout();
   }, [forceFlush, logout]);
-
-  // ─── Onboarding (shown once per device after login) ──────────────
-  const [showOnboarding, setShowOnboarding] = useState(false);
-
-  useEffect(() => {
-    if (user && !localStorage.getItem(ONBOARDING_KEY)) {
-      setShowOnboarding(true);
-    }
-  }, [user]);
-
-  const handleOnboardingComplete = () => {
-    localStorage.setItem(ONBOARDING_KEY, 'true');
-    setShowOnboarding(false);
-  };
 
   // ─── Achievement toast ────────────────────────────────────────────
   const [achievementToast, setAchievementToast] = useState<{ id: string; title: string; icon: string } | null>(null);
@@ -109,11 +94,6 @@ export default function App() {
     return <AuthGate onSignIn={signInWithGoogle} loading={authLoading} error={authError} />;
   }
 
-  // ─── First time → Onboarding ──────────────────────────────────────
-  if (showOnboarding) {
-    return <Onboarding actions={actions} onComplete={handleOnboardingComplete} />;
-  }
-
   // ─── Main app ─────────────────────────────────────────────────────
   return (
     <div className="h-screen flex flex-col bg-deep overflow-hidden">
@@ -150,6 +130,9 @@ export default function App() {
             )}
             {view === 'settings' && (
               <Settings key="settings" state={state} actions={actions} onLogout={handleLogout} />
+            )}
+            {view === 'profile' && (
+              <ProfileView key="profile" state={state} actions={actions} />
             )}
           </AnimatePresence>
         </main>
