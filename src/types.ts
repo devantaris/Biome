@@ -191,6 +191,7 @@ export interface AppActions {
   placeInventoryItem: (inventoryId: string, x: number, y: number) => void;
   moveForestItem: (itemId: string, newX: number, newY: number) => void;
   removeInventoryItem: (inventoryId: string) => void;
+  recycleForestItem: (itemId: string) => void;
 
   // Tasks
   addTask: (title: string, category: string, priority: Priority, dueDate: string, estimatedMinutes?: number, repeatDaily?: boolean) => void;

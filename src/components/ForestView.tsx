@@ -4,7 +4,7 @@
 // ============================================
 import React, { useMemo, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Package, X, Maximize2, Info } from 'lucide-react';
+import { Package, X, Maximize2, Info, ZoomIn, ZoomOut, RotateCcw, Move, RotateCcw as ReturnIcon, Trash2 } from 'lucide-react';
 import type { AppState, AppActions, ForestItem, InventoryItem } from '../types';
 import { RARITY_COLORS, RARITY_BG } from '../constants';
 
@@ -18,6 +18,8 @@ type PlacementModeItem = InventoryItem | null;
 export default function ForestView({ state, actions }: ForestViewProps) {
   const [placingItem, setPlacingItem] = useState<PlacementModeItem>(null);
   const [movingItem, setMovingItem] = useState<ForestItem | null>(null);
+  const [selectedItem, setSelectedItem] = useState<ForestItem | null>(null);
+  const [zoom, setZoom] = useState<number>(1.0);
   const [hoveredTile, setHoveredTile] = useState<{ x: number; y: number } | null>(null);
   const [expansionFlash, setExpansionFlash] = useState(false);
   const [showInventoryHelp, setShowInventoryHelp] = useState(false);
@@ -79,6 +81,7 @@ export default function ForestView({ state, actions }: ForestViewProps) {
   // ─── Placement actions ─────────────────────
   const selectForPlacement = useCallback((item: InventoryItem) => {
     setMovingItem(null);
+    setSelectedItem(null);
     setPlacingItem(item);
   }, []);
 
@@ -90,8 +93,8 @@ export default function ForestView({ state, actions }: ForestViewProps) {
   const handleTileClick = useCallback((x: number, y: number) => {
     if (!placingItem && !movingItem) {
       const clickedItem = gridMap.get(`${x},${y}`);
-      if (clickedItem && clickedItem.type !== 'dead') {
-        setMovingItem(clickedItem);
+      if (clickedItem) {
+        setSelectedItem(clickedItem);
       }
       return;
     }
@@ -148,14 +151,49 @@ export default function ForestView({ state, actions }: ForestViewProps) {
             {' · '}{healthPercent}% healthy
           </p>
         </div>
-        {(placingItem || movingItem) && (
-          <button
-            onClick={cancelPlacement}
-            className="flex items-center gap-2 px-4 py-2 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl font-bold text-sm hover:bg-red-500/20 transition-all"
-          >
-            <X className="w-4 h-4" /> Cancel {placingItem ? 'Placement' : 'Move'}
-          </button>
-        )}
+
+        <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
+          {/* Zoom controls */}
+          <div className="flex items-center gap-1 bg-elevated/80 border border-glass-border-light rounded-xl p-1">
+            <button
+              onClick={() => setZoom(z => Math.max(0.6, Math.round((z - 0.2) * 10) / 10))}
+              disabled={zoom <= 0.6}
+              className="p-1.5 hover:bg-forest-500/20 text-forest-300 disabled:opacity-30 rounded-lg transition-colors"
+              title="Zoom Out"
+            >
+              <ZoomOut className="w-4 h-4" />
+            </button>
+            <span className="text-[11px] font-mono font-bold text-forest-300 px-1 select-none min-w-[42px] text-center">
+              {Math.round(zoom * 100)}%
+            </span>
+            <button
+              onClick={() => setZoom(z => Math.min(2.0, Math.round((z + 0.2) * 10) / 10))}
+              disabled={zoom >= 2.0}
+              className="p-1.5 hover:bg-forest-500/20 text-forest-300 disabled:opacity-30 rounded-lg transition-colors"
+              title="Zoom In"
+            >
+              <ZoomIn className="w-4 h-4" />
+            </button>
+            {zoom !== 1.0 && (
+              <button
+                onClick={() => setZoom(1.0)}
+                className="p-1.5 hover:bg-forest-500/20 text-forest-400 rounded-lg transition-colors"
+                title="Reset Zoom (100%)"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
+          {(placingItem || movingItem) && (
+            <button
+              onClick={cancelPlacement}
+              className="flex items-center gap-2 px-3 py-1.5 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl font-bold text-xs sm:text-sm hover:bg-red-500/20 transition-all"
+            >
+              <X className="w-4 h-4" /> Cancel {placingItem ? 'Placement' : 'Move'}
+            </button>
+          )}
+        </div>
       </header>
 
       {/* ─── Territory fill bar ─── */}
@@ -244,7 +282,10 @@ export default function ForestView({ state, actions }: ForestViewProps) {
           </div>
         ) : (
           <div className="flex-1 overflow-auto custom-scrollbar p-2 md:p-4">
-            <div className="min-w-[600px] md:min-w-[700px] max-w-5xl mx-auto pb-4">
+            <div
+              className="min-w-[600px] md:min-w-[700px] max-w-5xl mx-auto pb-4 transition-transform duration-150 origin-top"
+              style={{ transform: `scale(${zoom})` }}
+            >
               <div
                 className="grid gap-0"
                 style={{
@@ -420,6 +461,83 @@ export default function ForestView({ state, actions }: ForestViewProps) {
         <WorldStat label="Rare" value={rarityBreakdown.rare} icon="🔵" color="text-blue-400" />
         <WorldStat label="Epic+" value={(rarityBreakdown.epic || 0) + (rarityBreakdown.legendary || 0)} icon="🟣" color="text-purple-400" />
       </div>
+
+      {/* ─── Selected Item Action Modal ─── */}
+      <AnimatePresence>
+        {selectedItem && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="glass-card max-w-sm w-full p-6 border-forest-500/30 shadow-2xl relative"
+            >
+              <button
+                onClick={() => setSelectedItem(null)}
+                className="absolute top-4 right-4 text-forest-500 hover:text-forest-200 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <div className="flex flex-col items-center text-center">
+                <div className="w-16 h-16 rounded-2xl bg-forest-900/40 border border-forest-500/20 flex items-center justify-center text-4xl mb-3 shadow-inner">
+                  {selectedItem.icon}
+                </div>
+                <h3 className="font-display font-bold text-lg text-forest-100">{selectedItem.name}</h3>
+                <p className={`text-xs font-bold uppercase tracking-wider mt-0.5 ${RARITY_COLORS[selectedItem.rarity]}`}>
+                  {selectedItem.rarity} {selectedItem.type === 'dead' ? '• Withered' : '• Planted'}
+                </p>
+                <p className="text-forest-500 text-xs mt-1">
+                  Placed at ({selectedItem.x + 1}, {selectedItem.y + 1}) · {new Date(selectedItem.timestamp).toLocaleDateString()}
+                </p>
+
+                <div className="w-full flex flex-col gap-2 mt-5">
+                  {selectedItem.type !== 'dead' && (
+                    <button
+                      onClick={() => {
+                        setMovingItem(selectedItem);
+                        setSelectedItem(null);
+                      }}
+                      className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-blue-500/15 border border-blue-500/30 text-blue-300 font-bold text-sm hover:bg-blue-500/25 transition-all"
+                    >
+                      <Move className="w-4 h-4" /> Move to New Tile
+                    </button>
+                  )}
+
+                  <button
+                    onClick={() => {
+                      actions.recycleForestItem(selectedItem.id);
+                      setSelectedItem(null);
+                    }}
+                    className={`w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl font-bold text-sm transition-all ${
+                      selectedItem.type === 'dead'
+                        ? 'bg-red-500/15 border border-red-500/30 text-red-300 hover:bg-red-500/25'
+                        : 'bg-forest-500/15 border border-forest-500/30 text-forest-200 hover:bg-forest-500/25'
+                    }`}
+                  >
+                    {selectedItem.type === 'dead' ? (
+                      <>
+                        <Trash2 className="w-4 h-4" /> Clear Withered Shrub
+                      </>
+                    ) : (
+                      <>
+                        <ReturnIcon className="w-4 h-4" /> Return to Inventory
+                      </>
+                    )}
+                  </button>
+
+                  <button
+                    onClick={() => setSelectedItem(null)}
+                    className="w-full py-2 text-xs text-forest-500 hover:text-forest-300 transition-colors mt-1"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }

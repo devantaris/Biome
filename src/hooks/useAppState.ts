@@ -155,6 +155,38 @@ export function useAppState(): { state: AppState; actions: AppActions; newAchiev
     }));
   }, []);
 
+  const recycleForestItem = useCallback((itemId: string) => {
+    setState(prev => {
+      const item = prev.forest.find(f => f.id === itemId);
+      if (!item) return prev;
+      const nextForest = prev.forest.filter(f => f.id !== itemId);
+      let nextInventory = prev.inventory;
+
+      // If living, return back to inventory so user doesn't lose earned items
+      if (item.type !== 'dead') {
+        const returnedItem: InventoryItem = {
+          id: item.id,
+          itemId: item.itemId,
+          name: item.name,
+          icon: item.icon,
+          type: item.type,
+          rarity: item.rarity,
+          earnedAt: item.timestamp,
+          sessionId: item.sessionId,
+          taskId: item.taskId,
+          size: item.size,
+        };
+        nextInventory = [...nextInventory, returnedItem];
+      }
+
+      return {
+        ...prev,
+        forest: nextForest,
+        inventory: nextInventory,
+      };
+    });
+  }, []);
+
   const addTask = useCallback((
     title: string,
     category: string,
@@ -338,6 +370,7 @@ export function useAppState(): { state: AppState; actions: AppActions; newAchiev
     removeInventoryItem,
     placeInventoryItem,
     moveForestItem,
+    recycleForestItem,
     addTask,
     toggleTask,
     deleteTask,
@@ -354,7 +387,7 @@ export function useAppState(): { state: AppState; actions: AppActions; newAchiev
     exportData,
     importData,
   }), [
-    addForestItem, addToInventory, removeInventoryItem, placeInventoryItem, moveForestItem,
+    addForestItem, addToInventory, removeInventoryItem, placeInventoryItem, moveForestItem, recycleForestItem,
     addTask, toggleTask, deleteTask, rescheduleTask, updateTaskMinutes, addSession,
     unlockAchievement, updateStreak, updateProfile, updateSettings,
     addXp, completeChallenge, resetAll, exportData, importData,
