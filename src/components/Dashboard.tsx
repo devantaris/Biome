@@ -18,12 +18,16 @@ interface DashboardProps {
 }
 
 export default function Dashboard({ state, actions, setView }: DashboardProps) {
+  const greeting = useMemo(() => getGreeting(), []);
+  const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
   const todayMinutes = useMemo(() => getTodayMinutes(state.sessions), [state.sessions]);
   const todaySessions = useMemo(() => getTodaySessions(state.sessions), [state.sessions]);
   const weeklyStats = useMemo(() => getWeeklyStats(state), [state.sessions, state.tasks]);
   const dailyGoalProgress = Math.min((todayMinutes / state.settings.dailyGoalMinutes) * 100, 100);
-  const activeTasks = state.tasks.filter(t => !t.completed).length;
-  const completedTasks = state.tasks.filter(t => t.completed).length;
+
+  const todayTasks = useMemo(() => state.tasks.filter(t => t.dueDate === todayStr), [state.tasks, todayStr]);
+  const activeTasks = useMemo(() => todayTasks.filter(t => !t.completed).length, [todayTasks]);
+  const completedTasks = useMemo(() => todayTasks.filter(t => t.completed).length, [todayTasks]);
 
   return (
     <motion.div
@@ -35,7 +39,7 @@ export default function Dashboard({ state, actions, setView }: DashboardProps) {
       {/* Header */}
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-3xl font-display font-bold text-forest-100">{getGreeting()}, {state.profile.name}! 🌲</h2>
+          <h2 className="text-3xl font-display font-bold text-forest-100">{greeting}, {state.profile.name}! 🌲</h2>
           <p className="text-forest-500 mt-1">Here's how your forest is growing today.</p>
         </div>
         <button
@@ -155,7 +159,7 @@ export default function Dashboard({ state, actions, setView }: DashboardProps) {
             </button>
           </div>
           <div className="space-y-2">
-            {state.tasks.filter(t => !t.completed).slice(0, 5).map(task => {
+            {todayTasks.filter(t => !t.completed).slice(0, 5).map(task => {
               const cat = CATEGORIES.find(c => c.id === task.category);
               return (
                 <div
@@ -184,7 +188,7 @@ export default function Dashboard({ state, actions, setView }: DashboardProps) {
             })}
             {activeTasks === 0 && (
               <div className="text-center py-8 text-forest-600 italic text-sm">
-                No active tasks. Time to relax! 🍃
+                No active tasks for today. Time to relax! 🍃
               </div>
             )}
           </div>
