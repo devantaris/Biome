@@ -1,10 +1,10 @@
 // ============================================
 // Focus Forest — Focus Timer
 // ============================================
-import React from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Play, Square, Coffee, SkipForward, Volume2, VolumeX } from 'lucide-react';
-import type { AppState } from '../types';
+import { Play, Square, Coffee, SkipForward, Volume2, VolumeX, AlertTriangle } from 'lucide-react';
+import type { AppState, RewardItem } from '../types';
 import type { TimerState, TimerActions } from '../hooks/useTimer';
 import { REWARDS, TIMER_PRESETS, AMBIENT_SOUNDS, RARITY_COLORS, RARITY_BG } from '../constants';
 
@@ -12,11 +12,13 @@ interface TimerProps {
   state: AppState;
   timer: TimerState;
   timerActions: TimerActions;
-  showReward: any;
+  showReward: RewardItem | null;
   clearReward: () => void;
 }
 
 export default function TimerView({ state, timer, timerActions, showReward, clearReward }: TimerProps) {
+  const [showGiveUpConfirm, setShowGiveUpConfirm] = useState(false);
+
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -83,6 +85,11 @@ export default function TimerView({ state, timer, timerActions, showReward, clea
               <span className="text-xs font-bold text-forest-600 uppercase tracking-widest">Ready to focus</span>
             )}
           </div>
+          {timer.isActive && timer.phase === 'focusing' && (
+            <p className="text-[11px] font-medium text-forest-400 mt-1 tabular-nums">
+              Elapsed: {formatTime(Math.max(0, timer.selectedDuration * 60 - timer.timeLeft))}
+            </p>
+          )}
           {timer.selectedTask && timer.isActive && (
             <p className="text-[10px] text-forest-500 mt-1 truncate max-w-full">Working on: {timer.selectedTask.title}</p>
           )}
@@ -227,7 +234,7 @@ export default function TimerView({ state, timer, timerActions, showReward, clea
 
           {/* Give Up Button */}
           <button
-            onClick={timerActions.giveUp}
+            onClick={() => setShowGiveUpConfirm(true)}
             className="px-8 py-3 bg-red-500/10 text-red-400 rounded-xl font-bold border border-red-500/20 hover:bg-red-500/20 transition-all flex items-center gap-2"
           >
             <Square className="w-4 h-4 fill-current" />
@@ -326,6 +333,50 @@ export default function TimerView({ state, timer, timerActions, showReward, clea
                   className="w-full py-3.5 bg-forest-600 text-white rounded-xl font-bold hover:bg-forest-500 transition-all"
                 >
                   Collect Reward ✨
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ─── Give Up Confirmation Modal ─── */}
+      <AnimatePresence>
+        {showGiveUpConfirm && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-deep/80 backdrop-blur-md"
+              onClick={() => setShowGiveUpConfirm(false)}
+            />
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="glass-card w-full max-w-sm p-6 relative z-10 border border-red-500/30 text-center"
+            >
+              <div className="text-4xl mb-3">🥀</div>
+              <h3 className="text-xl font-display font-bold text-forest-100 mb-2">Give Up Session?</h3>
+              <p className="text-sm text-forest-400 mb-6 leading-relaxed">
+                Ending early will plant a <span className="text-red-400 font-bold">Withered Shrub</span> in your forest as a penalty.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowGiveUpConfirm(false)}
+                  className="flex-1 py-3 bg-forest-600 text-white rounded-xl font-bold hover:bg-forest-500 transition-all text-sm"
+                >
+                  Keep Focusing
+                </button>
+                <button
+                  onClick={() => {
+                    setShowGiveUpConfirm(false);
+                    timerActions.giveUp();
+                  }}
+                  className="flex-1 py-3 bg-red-500/15 border border-red-500/30 text-red-400 rounded-xl font-bold hover:bg-red-500/25 transition-all text-sm"
+                >
+                  Yes, Give Up
                 </button>
               </div>
             </motion.div>
