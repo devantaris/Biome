@@ -3,7 +3,7 @@
 // ============================================
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type { AppState, AppActions, RewardItem, Task, ForestItem, FocusSession } from '../types';
-import { REWARDS, GRID_SIZE } from '../constants';
+import { REWARDS } from '../constants';
 import { soundEngine } from '../lib/sounds';
 
 export type TimerPhase = 'idle' | 'focusing' | 'break';
@@ -172,6 +172,37 @@ export function useTimer(state: AppState, actions: AppActions): { timer: TimerSt
     }
 
     // ❌ Dead shrub goes DIRECTLY into the forest (penalty, no placement choice)
+    const currentGridSize = state.gridSize || 10;
+    const occupied = new Set<string>();
+    state.forest.forEach(item => {
+      occupied.add(`${item.x},${item.y}`);
+      if (item.size === 2) {
+        occupied.add(`${item.x + 1},${item.y}`);
+        occupied.add(`${item.x},${item.y + 1}`);
+        occupied.add(`${item.x + 1},${item.y + 1}`);
+      }
+    });
+
+    const openTiles: { x: number; y: number }[] = [];
+    for (let x = 0; x < currentGridSize; x++) {
+      for (let y = 0; y < currentGridSize; y++) {
+        if (!occupied.has(`${x},${y}`)) {
+          openTiles.push({ x, y });
+        }
+      }
+    }
+
+    let targetX = 0;
+    let targetY = 0;
+    if (openTiles.length > 0) {
+      const chosen = openTiles[Math.floor(Math.random() * openTiles.length)];
+      targetX = chosen.x;
+      targetY = chosen.y;
+    } else {
+      targetX = Math.floor(Math.random() * currentGridSize);
+      targetY = Math.floor(Math.random() * currentGridSize);
+    }
+
     const deadItem: ForestItem = {
       id: crypto.randomUUID?.() || Math.random().toString(36).substr(2, 9),
       itemId: 'dead_shrub',
@@ -179,8 +210,8 @@ export function useTimer(state: AppState, actions: AppActions): { timer: TimerSt
       name: 'Withered Shrub',
       icon: '🥀',
       rarity: 'common',
-      x: Math.floor(Math.random() * GRID_SIZE),
-      y: Math.floor(Math.random() * GRID_SIZE),
+      x: targetX,
+      y: targetY,
       timestamp: Date.now(),
       placedAt: Date.now(),
       taskId: selectedTask?.id,
@@ -203,7 +234,7 @@ export function useTimer(state: AppState, actions: AppActions): { timer: TimerSt
     if (window.electronAPI?.setAlwaysOnTop) {
       window.electronAPI.setAlwaysOnTop(false);
     }
-  }, [selectedTask, selectedItem, selectedDuration, sessionStartTime, state.settings.soundEnabled, actions]);
+  }, [selectedTask, selectedItem, selectedDuration, sessionStartTime, state.settings.soundEnabled, state.gridSize, state.forest, actions]);
 
   const startBreak = useCallback((isLong: boolean) => {
     const mins = isLong ? state.settings.longBreakMinutes : state.settings.shortBreakMinutes;
