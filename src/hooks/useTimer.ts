@@ -46,6 +46,24 @@ export function useTimer(state: AppState, actions: AppActions): { timer: TimerSt
   const [pomodoroCount, setPomodoroCount] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Latest refs to prevent stale closure bugs in timer lifecycle callbacks
+  const stateRef = useRef(state);
+  stateRef.current = state;
+  const actionsRef = useRef(actions);
+  actionsRef.current = actions;
+  const selectedItemRef = useRef(selectedItem);
+  selectedItemRef.current = selectedItem;
+  const selectedTaskRef = useRef(selectedTask);
+  selectedTaskRef.current = selectedTask;
+  const selectedDurationRef = useRef(selectedDuration);
+  selectedDurationRef.current = selectedDuration;
+  const selectedSoundRef = useRef(selectedSound);
+  selectedSoundRef.current = selectedSound;
+  const sessionStartTimeRef = useRef(sessionStartTime);
+  sessionStartTimeRef.current = sessionStartTime;
+  const pomodoroCountRef = useRef(pomodoroCount);
+  pomodoroCountRef.current = pomodoroCount;
+
   const progress = isActive && phase === 'focusing'
     ? Math.min(100, Math.max(0, (1 - timeLeft / (selectedDuration * 60)) * 100))
     : isActive && phase === 'break'
@@ -75,71 +93,79 @@ export function useTimer(state: AppState, actions: AppActions): { timer: TimerSt
     setPhase('idle');
     if (timerRef.current) clearInterval(timerRef.current);
 
+    const currentState = stateRef.current;
+    const currentActions = actionsRef.current;
+    const currentItem = selectedItemRef.current;
+    const currentTask = selectedTaskRef.current;
+    const currentDuration = selectedDurationRef.current;
+    const currentSound = selectedSoundRef.current;
+    const currentStartTime = sessionStartTimeRef.current;
+
     // Play completion sound
-    if (state.settings.soundEnabled) {
+    if (currentState.settings.soundEnabled) {
       soundEngine.playCompletionChime();
     }
     soundEngine.stop();
 
-    // ✅ NEW: Item goes to INVENTORY (not placed directly in world)
+    // Item goes to INVENTORY
     const inventoryItem: import('../types').InventoryItem = {
       id: crypto.randomUUID?.() || Math.random().toString(36).substr(2, 9),
-      itemId: selectedItem.id,
-      type: selectedItem.type,
-      name: selectedItem.name,
-      icon: selectedItem.icon,
-      rarity: selectedItem.rarity,
+      itemId: currentItem.id,
+      type: currentItem.type,
+      name: currentItem.name,
+      icon: currentItem.icon,
+      rarity: currentItem.rarity,
       earnedAt: Date.now(),
-      taskId: selectedTask?.id,
-      size: selectedItem.size,
+      taskId: currentTask?.id,
+      size: currentItem.size,
     };
-    actions.addToInventory(inventoryItem);
+    currentActions.addToInventory(inventoryItem);
 
     // Record session
     const session: FocusSession = {
       id: crypto.randomUUID?.() || Math.random().toString(36).substr(2, 9),
-      startTime: sessionStartTime || Date.now() - selectedDuration * 60000,
+      startTime: currentStartTime || Date.now() - currentDuration * 60000,
       endTime: Date.now(),
-      duration: selectedDuration,
+      duration: currentDuration,
       completed: true,
       date: new Date().toISOString().split('T')[0],
-      taskId: selectedTask?.id,
-      rewardId: selectedItem.id,
-      ambientSound: selectedSound,
+      taskId: currentTask?.id,
+      rewardId: currentItem.id,
+      ambientSound: currentSound,
     };
-    actions.addSession(session);
+    currentActions.addSession(session);
 
-    if (selectedTask) {
-      actions.updateTaskMinutes(selectedTask.id, selectedDuration);
+    if (currentTask) {
+      currentActions.updateTaskMinutes(currentTask.id, currentDuration);
     }
 
     setPomodoroCount(prev => prev + 1);
-    setShowReward(selectedItem);
+    setShowReward(currentItem);
 
     if (window.electronAPI?.showNotification) {
       window.electronAPI.showNotification(
         'You earned a reward! 🌱',
-        `${selectedItem.name} is waiting to be planted. Open My Forest to place it!`
+        `${currentItem.name} is waiting to be planted. Open My Forest to place it!`
       );
     }
     if (window.electronAPI?.setAlwaysOnTop) {
       window.electronAPI.setAlwaysOnTop(false);
     }
-  }, [selectedItem, selectedTask, selectedDuration, selectedSound, sessionStartTime, state.settings.soundEnabled, actions]);
+  }, []);
 
   const handleBreakEnd = useCallback(() => {
     setIsActive(false);
     setPhase('idle');
     if (timerRef.current) clearInterval(timerRef.current);
 
-    if (state.settings.soundEnabled) {
+    if (stateRef.current.settings.soundEnabled) {
       soundEngine.playCompletionChime();
     }
 
     if (window.electronAPI?.showNotification) {
       window.electronAPI.showNotification('Break Over! ⏱️', 'Time to get back to focusing.');
     }
-  }, [state.settings.soundEnabled]);
+  }, []);
 
   // ─── Timer Actions ────────────────────────
 
