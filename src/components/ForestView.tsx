@@ -4,7 +4,7 @@
 // ============================================
 import React, { useMemo, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Package, X, Maximize2, Info, ZoomIn, ZoomOut, RotateCcw, Move, RotateCcw as ReturnIcon, Trash2 } from 'lucide-react';
+import { Package, X, Maximize2, Info, ZoomIn, ZoomOut, RotateCcw, Move, RotateCcw as ReturnIcon, Trash2, Share2, Check, Copy } from 'lucide-react';
 import type { AppState, AppActions, ForestItem, InventoryItem } from '../types';
 import { RARITY_COLORS, RARITY_BG } from '../constants';
 
@@ -23,6 +23,8 @@ export default function ForestView({ state, actions }: ForestViewProps) {
   const [hoveredTile, setHoveredTile] = useState<{ x: number; y: number } | null>(null);
   const [expansionFlash, setExpansionFlash] = useState(false);
   const [showInventoryHelp, setShowInventoryHelp] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [copiedShare, setCopiedShare] = useState(false);
 
   const gridSize = state.gridSize ?? 10;
   const totalTiles = gridSize * gridSize;
@@ -134,6 +136,37 @@ export default function ForestView({ state, actions }: ForestViewProps) {
     return counts;
   }, [livingItems]);
 
+  const shareSummaryText = useMemo(() => {
+    return (
+      `🌲 My Biome Forest World 🌍\n` +
+      `• Territory: ${state.gridSize}×${state.gridSize} (${livingItems.length}/${totalTiles} tiles planted)\n` +
+      `• Forest Health: ${healthPercent}%\n` +
+      `• Expansions: ${state.expansionCount}×\n` +
+      `• Streak: ${state.streak.current} days 🔥\n` +
+      `• Total Focus: ${Math.round(state.totalFocusMinutes / 60)}h completed\n\n` +
+      `Grow your forest with Biome: https://biome-focus.web.app`
+    );
+  }, [state.gridSize, livingItems.length, totalTiles, healthPercent, state.expansionCount, state.streak.current, state.totalFocusMinutes]);
+
+  const handleShare = useCallback(async () => {
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      try {
+        await navigator.share({
+          title: `${state.profile.name}'s Biome Forest`,
+          text: shareSummaryText,
+        });
+        return;
+      } catch {
+        // Fallback to clipboard
+      }
+    }
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      await navigator.clipboard.writeText(shareSummaryText);
+      setCopiedShare(true);
+      setTimeout(() => setCopiedShare(false), 2500);
+    }
+  }, [state.profile.name, shareSummaryText]);
+
   return (
       <motion.div
         initial={{ opacity: 0 }}
@@ -183,6 +216,15 @@ export default function ForestView({ state, actions }: ForestViewProps) {
                 <RotateCcw className="w-3.5 h-3.5" />
               </button>
             )}
+            <div className="w-[1px] h-4 bg-glass-border mx-1" />
+            <button
+              onClick={() => setShowShareModal(true)}
+              className="px-2.5 py-1 text-xs font-bold text-forest-300 hover:text-forest-100 hover:bg-forest-500/20 rounded-lg transition-colors flex items-center gap-1.5"
+              title="Share Biome World"
+            >
+              <Share2 className="w-3.5 h-3.5 text-forest-400" />
+              <span className="hidden sm:inline">Share</span>
+            </button>
           </div>
 
           {(placingItem || movingItem) && (
@@ -533,6 +575,104 @@ export default function ForestView({ state, actions }: ForestViewProps) {
                     Cancel
                   </button>
                 </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ─── Share Biome Modal ─── */}
+      <AnimatePresence>
+        {showShareModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="glass-card max-w-md w-full p-6 border-forest-500/30 shadow-2xl relative"
+            >
+              <button
+                onClick={() => setShowShareModal(false)}
+                className="absolute top-4 right-4 text-forest-500 hover:text-forest-200 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <div className="flex items-center gap-2 mb-4">
+                <Share2 className="w-5 h-5 text-forest-400" />
+                <h3 className="font-display font-bold text-xl text-forest-100">Share Biome World</h3>
+              </div>
+
+              {/* Visual Card Preview */}
+              <div className="rounded-2xl p-5 border border-forest-500/30 bg-gradient-to-br from-forest-900/80 via-forest-950/90 to-black text-forest-100 shadow-xl mb-4 relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-4 opacity-10 text-8xl pointer-events-none select-none">
+                  🌲
+                </div>
+
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 rounded-xl bg-forest-800/60 border border-forest-500/30 flex items-center justify-center text-2xl shadow-inner">
+                    {state.profile.avatar || '🧙‍♂️'}
+                  </div>
+                  <div>
+                    <h4 className="font-display font-bold text-lg text-forest-100 leading-tight">
+                      {state.profile.name}'s Forest
+                    </h4>
+                    <p className="text-xs text-forest-400">Biome Citizen · Level {state.level}</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2 py-3 border-y border-forest-500/20 text-center mb-3">
+                  <div>
+                    <span className="text-xs text-forest-500 font-bold block uppercase">Planted</span>
+                    <span className="text-lg font-display font-bold text-forest-200">
+                      {livingItems.length}/{totalTiles}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-xs text-forest-500 font-bold block uppercase">Streak</span>
+                    <span className="text-lg font-display font-bold text-gold-400">
+                      {state.streak.current}d 🔥
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-xs text-forest-500 font-bold block uppercase">Health</span>
+                    <span className="text-lg font-display font-bold text-forest-300">
+                      {healthPercent}%
+                    </span>
+                  </div>
+                </div>
+
+                <p className="text-xs text-forest-400/90 leading-relaxed italic">
+                  "Growing a sanctuary of focus, one session at a time."
+                </p>
+                <div className="mt-2 text-right">
+                  <span className="text-[10px] font-mono text-forest-500 tracking-wider">biome-focus.web.app</span>
+                </div>
+              </div>
+
+              {/* Action buttons */}
+              <div className="flex flex-col gap-2">
+                <button
+                  onClick={handleShare}
+                  className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gradient-to-r from-forest-600 to-forest-500 text-white font-bold text-sm hover:from-forest-500 hover:to-forest-400 shadow-lg shadow-forest-900/40 transition-all"
+                >
+                  {copiedShare ? (
+                    <>
+                      <Check className="w-4 h-4 text-green-300" /> Copied Summary to Clipboard!
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-4 h-4" /> Copy Social Summary
+                    </>
+                  )}
+                </button>
+
+                <button
+                  onClick={() => setShowShareModal(false)}
+                  className="w-full py-2 text-xs text-forest-500 hover:text-forest-300 transition-colors"
+                >
+                  Close
+                </button>
               </div>
             </motion.div>
           </div>
