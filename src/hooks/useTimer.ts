@@ -139,8 +139,19 @@ export function useTimer(state: AppState, actions: AppActions): { timer: TimerSt
       currentActions.updateTaskMinutes(currentTask.id, currentDuration);
     }
 
-    setPomodoroCount(prev => prev + 1);
+    const nextPomodoro = pomodoroCountRef.current + 1;
+    setPomodoroCount(nextPomodoro);
     setShowReward(currentItem);
+
+    // Auto-start break if configured in user settings
+    if (currentState.settings.autoStartBreaks) {
+      const isLong = nextPomodoro % currentState.settings.pomodorosBeforeLong === 0;
+      const breakMins = isLong ? currentState.settings.longBreakMinutes : currentState.settings.shortBreakMinutes;
+      setBreakDuration(breakMins);
+      setTimeLeft(breakMins * 60);
+      setIsActive(true);
+      setPhase('break');
+    }
 
     if (window.electronAPI?.showNotification) {
       window.electronAPI.showNotification(
