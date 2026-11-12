@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import type {
   AppState, AppActions, ForestItem, InventoryItem,
-  FocusSession, Priority, Profile, AppSettings
+  FocusSession, Priority, Profile, AppSettings, Task
 } from '../types';
 import { INITIAL_STATE, XP_PER_LEVEL, XP_PER_MINUTE, GRID_EXPANSION_FACTOR } from '../constants';
 import { checkNewAchievements } from '../lib/achievements';
@@ -15,6 +15,12 @@ const STORAGE_KEY = 'biome_pro_v3';
 
 function todayStr(): string {
   return new Date().toISOString().split('T')[0];
+}
+
+function addDaysStr(dateStr: string, n: number): string {
+  const d = new Date(dateStr + 'T00:00:00');
+  d.setDate(d.getDate() + n);
+  return d.toISOString().split('T')[0];
 }
 
 export function useAppState(): { state: AppState; actions: AppActions; newAchievements: string[] } {
@@ -154,9 +160,10 @@ export function useAppState(): { state: AppState; actions: AppActions; newAchiev
     category: string,
     priority: Priority,
     dueDate: string,
-    estimatedMinutes?: number
+    estimatedMinutes?: number,
+    repeatDaily?: boolean
   ) => {
-    const task = {
+    const task: Task = {
       id: crypto.randomUUID?.() || Math.random().toString(36).substr(2, 9),
       title,
       completed: false,
@@ -166,18 +173,50 @@ export function useAppState(): { state: AppState; actions: AppActions; newAchiev
       dueDate,
       estimatedMinutes,
       actualMinutes: 0,
+      repeatDaily: !!repeatDaily,
     };
     setState(prev => ({ ...prev, tasks: [task, ...prev.tasks] }));
   }, []);
 
   const toggleTask = useCallback((id: string) => {
+    setState(prev => {
+      const target = prev.tasks.find(t => t.id === id);
+      if (!target) return prev;
+      const isNowCompleted = !target.completed;
+      let nextTasks = prev.tasks.map(t =>
+        t.id === id
+          ? { ...t, completed: isNowCompleted, completedAt: isNowCompleted ? Date.now() : undefined }
+          : t
+      );
+
+      if (isNowCompleted && target.repeatDaily) {
+        const nextDay = addDaysStr(target.dueDate, 1);
+        const alreadyExists = nextTasks.some(t => t.title === target.title && t.dueDate === nextDay);
+        if (!alreadyExists) {
+          const recurringCopy: Task = {
+            id: crypto.randomUUID?.() || Math.random().toString(36).substr(2, 9),
+            title: target.title,
+            completed: false,
+            category: target.category,
+            priority: target.priority,
+            createdAt: Date.now(),
+            dueDate: nextDay,
+            estimatedMinutes: target.estimatedMinutes,
+            actualMinutes: 0,
+            repeatDaily: true,
+          };
+          nextTasks = [recurringCopy, ...nextTasks];
+        }
+      }
+
+      return { ...prev, tasks: nextTasks };
+    });
+  }, []);
+
+  const rescheduleTask = useCallback((id: string, newDueDate: string) => {
     setState(prev => ({
       ...prev,
-      tasks: prev.tasks.map(t =>
-        t.id === id
-          ? { ...t, completed: !t.completed, completedAt: !t.completed ? Date.now() : undefined }
-          : t
-      ),
+      tasks: prev.tasks.map(t => (t.id === id ? { ...t, dueDate: newDueDate } : t)),
     }));
   }, []);
 
@@ -302,6 +341,7 @@ export function useAppState(): { state: AppState; actions: AppActions; newAchiev
     addTask,
     toggleTask,
     deleteTask,
+    rescheduleTask,
     updateTaskMinutes,
     addSession,
     unlockAchievement,
@@ -315,7 +355,7 @@ export function useAppState(): { state: AppState; actions: AppActions; newAchiev
     importData,
   }), [
     addForestItem, addToInventory, removeInventoryItem, placeInventoryItem, moveForestItem,
-    addTask, toggleTask, deleteTask, updateTaskMinutes, addSession,
+    addTask, toggleTask, deleteTask, rescheduleTask, updateTaskMinutes, addSession,
     unlockAchievement, updateStreak, updateProfile, updateSettings,
     addXp, completeChallenge, resetAll, exportData, importData,
   ]);

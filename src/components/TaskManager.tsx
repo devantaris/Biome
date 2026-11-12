@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import {
   Plus, Trash2, CheckCircle2, Circle,
   ChevronLeft, ChevronRight, Calendar,
+  ChevronDown, Repeat, CalendarPlus
 } from 'lucide-react';
 import type { AppState, AppActions, Priority, Task } from '../types';
 import { CATEGORIES } from '../constants';
@@ -54,7 +55,9 @@ export default function TaskManager({ state, actions }: TaskManagerProps) {
   const [newTitle, setNewTitle] = useState('');
   const [newCategory, setNewCategory] = useState('work');
   const [newPriority, setNewPriority] = useState<Priority>('medium');
+  const [newRepeatDaily, setNewRepeatDaily] = useState(false);
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'done'>('all');
+  const [showCompleted, setShowCompleted] = useState(false);
 
   const isPast = activeDate < todayStr;
   const isFuture = activeDate > todayStr;
@@ -65,20 +68,24 @@ export default function TaskManager({ state, actions }: TaskManagerProps) {
     [state.tasks, activeDate]
   );
 
-  const filteredTasks = useMemo(() => {
-    if (filterStatus === 'active') return dayTasks.filter(t => !t.completed);
-    if (filterStatus === 'done') return dayTasks.filter(t => t.completed);
-    return dayTasks;
-  }, [dayTasks, filterStatus]);
+  const activeDayTasks = useMemo(() => dayTasks.filter(t => !t.completed), [dayTasks]);
+  const completedDayTasks = useMemo(() => dayTasks.filter(t => t.completed), [dayTasks]);
 
-  const completedCount = dayTasks.filter(t => t.completed).length;
+  const filteredTasks = useMemo(() => {
+    if (filterStatus === 'active') return activeDayTasks;
+    if (filterStatus === 'done') return completedDayTasks;
+    return dayTasks;
+  }, [dayTasks, activeDayTasks, completedDayTasks, filterStatus]);
+
+  const completedCount = completedDayTasks.length;
   const completionPct = dayTasks.length > 0 ? Math.round((completedCount / dayTasks.length) * 100) : 0;
 
   function handleAdd(e: React.FormEvent) {
     e.preventDefault();
     if (!newTitle.trim()) return;
-    actions.addTask(newTitle.trim(), newCategory, newPriority, activeDate);
+    actions.addTask(newTitle.trim(), newCategory, newPriority, activeDate, undefined, newRepeatDaily);
     setNewTitle('');
+    setNewRepeatDaily(false);
   }
 
   function goToDate(delta: number) {
@@ -225,6 +232,20 @@ export default function TaskManager({ state, actions }: TaskManagerProps) {
                 {cat.icon} {cat.name}
               </button>
             ))}
+            {/* Repeat daily toggle */}
+            <button
+              type="button"
+              onClick={() => setNewRepeatDaily(v => !v)}
+              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all flex items-center gap-1 ${
+                newRepeatDaily
+                  ? 'bg-forest-500/20 text-forest-300 border-forest-500/40'
+                  : 'text-forest-600 border-transparent hover:text-forest-400'
+              }`}
+              title="Repeat this task every day upon completion"
+            >
+              <Repeat className="w-3 h-3" /> Repeat daily
+            </button>
+
             {/* Priority */}
             <div className="ml-auto flex gap-1">
               {(['low', 'medium', 'high'] as Priority[]).map(p => (
@@ -273,15 +294,70 @@ export default function TaskManager({ state, actions }: TaskManagerProps) {
       {/* ─── Task List ─── */}
       <div className="space-y-2">
         <AnimatePresence>
-          {filteredTasks.map(task => (
-            <TaskRow
-              key={task.id}
-              task={task}
-              onToggle={() => !isPast && actions.toggleTask(task.id)}
-              onDelete={() => !isPast && actions.deleteTask(task.id)}
-              readonly={isPast}
-            />
-          ))}
+          {filterStatus === 'all' ? (
+            <>
+              {activeDayTasks.map(task => (
+                <TaskRow
+                  key={task.id}
+                  task={task}
+                  onToggle={() => !isPast && actions.toggleTask(task.id)}
+                  onDelete={() => !isPast && actions.deleteTask(task.id)}
+                  onReschedule={() => !isPast && actions.rescheduleTask(task.id, addDays(task.dueDate, 1))}
+                  readonly={isPast}
+                />
+              ))}
+
+              {/* Collapsed completed section */}
+              {completedDayTasks.length > 0 && (
+                <div className="pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowCompleted(v => !v)}
+                    className="w-full flex items-center justify-between p-3 rounded-xl bg-elevated/40 border border-glass-border hover:bg-elevated/60 text-xs font-bold text-forest-400 transition-all"
+                  >
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-forest-500" />
+                      <span>Completed ({completedDayTasks.length})</span>
+                    </div>
+                    <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${showCompleted ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  <AnimatePresence>
+                    {showCompleted && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="space-y-2 mt-2"
+                      >
+                        {completedDayTasks.map(task => (
+                          <TaskRow
+                            key={task.id}
+                            task={task}
+                            onToggle={() => !isPast && actions.toggleTask(task.id)}
+                            onDelete={() => !isPast && actions.deleteTask(task.id)}
+                            onReschedule={() => !isPast && actions.rescheduleTask(task.id, addDays(task.dueDate, 1))}
+                            readonly={isPast}
+                          />
+                        ))}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              )}
+            </>
+          ) : (
+            filteredTasks.map(task => (
+              <TaskRow
+                key={task.id}
+                task={task}
+                onToggle={() => !isPast && actions.toggleTask(task.id)}
+                onDelete={() => !isPast && actions.deleteTask(task.id)}
+                onReschedule={() => !isPast && actions.rescheduleTask(task.id, addDays(task.dueDate, 1))}
+                readonly={isPast}
+              />
+            ))
+          )}
         </AnimatePresence>
 
         {filteredTasks.length === 0 && (
@@ -303,10 +379,11 @@ export default function TaskManager({ state, actions }: TaskManagerProps) {
   );
 }
 
-function TaskRow({ task, onToggle, onDelete, readonly }: {
+function TaskRow({ task, onToggle, onDelete, onReschedule, readonly }: {
   task: Task;
   onToggle: () => void;
   onDelete: () => void;
+  onReschedule?: () => void;
   readonly: boolean;
 }) {
   const cat = CATEGORIES.find(c => c.id === task.category);
@@ -340,6 +417,13 @@ function TaskRow({ task, onToggle, onDelete, readonly }: {
         )}
       </div>
 
+      {/* Repeat indicator */}
+      {task.repeatDaily && (
+        <span className="text-forest-400 text-xs px-1.5 py-0.5 rounded bg-forest-500/10 border border-forest-500/20" title="Repeats daily">
+          <Repeat className="w-3 h-3 inline mr-0.5" /> daily
+        </span>
+      )}
+
       {/* Category badge */}
       <span
         className="text-[10px] px-2 py-0.5 rounded-md font-bold border hidden sm:inline-block"
@@ -357,6 +441,17 @@ function TaskRow({ task, onToggle, onDelete, readonly }: {
         task.priority === 'high' ? 'bg-red-400' :
         task.priority === 'medium' ? 'bg-yellow-400' : 'bg-green-400'
       }`} />
+
+      {/* Move to tomorrow */}
+      {!task.completed && !readonly && onReschedule && (
+        <button
+          onClick={onReschedule}
+          className="flex-shrink-0 text-forest-600 hover:text-forest-300 opacity-0 group-hover:opacity-100 transition-all p-1"
+          title="Move to tomorrow"
+        >
+          <CalendarPlus className="w-4 h-4" />
+        </button>
+      )}
 
       {!readonly && (
         <button

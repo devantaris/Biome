@@ -64,6 +64,7 @@ export interface Task {
   completedAt?: number;
   estimatedMinutes?: number;
   actualMinutes: number;
+  repeatDaily?: boolean;
 }
 
 export interface Category {
@@ -192,9 +193,10 @@ export interface AppActions {
   removeInventoryItem: (inventoryId: string) => void;
 
   // Tasks
-  addTask: (title: string, category: string, priority: Priority, dueDate: string, estimatedMinutes?: number) => void;
+  addTask: (title: string, category: string, priority: Priority, dueDate: string, estimatedMinutes?: number, repeatDaily?: boolean) => void;
   toggleTask: (id: string) => void;
   deleteTask: (id: string) => void;
+  rescheduleTask: (id: string, newDueDate: string) => void;
   updateTaskMinutes: (id: string, minutes: number) => void;
 
   // Sessions
