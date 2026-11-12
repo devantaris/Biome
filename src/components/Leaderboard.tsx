@@ -1,12 +1,12 @@
 // ============================================
 // Focus Forest — Leaderboard
 // ============================================
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { motion } from 'motion/react';
-import { Users, Crown, Medal, Flame, Target, Loader2 } from 'lucide-react';
+import { Users, Crown, Medal, Flame, Target, Loader2, RotateCw } from 'lucide-react';
 import type { AppState, AppActions, LeaderboardEntry } from '../types';
 import { getWeeklyChallenge } from '../lib/leaderboard';
-import { fetchLeaderboard } from '../lib/firestore';
+import { fetchLeaderboard, LeaderboardRecord } from '../lib/firestore';
 import { formatDuration } from '../lib/analytics';
 
 interface LeaderboardProps {
@@ -16,55 +16,71 @@ interface LeaderboardProps {
 }
 
 export default function Leaderboard({ state, actions, user }: LeaderboardProps) {
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [rawRecords, setRawRecords] = useState<LeaderboardRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const weeklyChallenge = useMemo(() => getWeeklyChallenge(), []);
 
-  const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-  const playerWeeklyMinutes = state.sessions
-    .filter(s => s.startTime >= weekAgo && s.completed)
-    .reduce((sum, s) => sum + s.duration, 0);
+  const weekAgo = useMemo(() => Date.now() - 7 * 24 * 60 * 60 * 1000, []);
+  const playerWeeklyMinutes = useMemo(() => {
+    return state.sessions
+      .filter(s => s.startTime >= weekAgo && s.completed)
+      .reduce((sum, s) => sum + s.duration, 0);
+  }, [state.sessions, weekAgo]);
+
   const challengeProgress = Math.min((playerWeeklyMinutes / weeklyChallenge.targetMinutes) * 100, 100);
 
-  useEffect(() => {
-    async function loadData() {
-      setLoading(true);
+  const loadLeaderboardData = useCallback(async () => {
+    setLoading(true);
+    try {
       const topUsers = await fetchLeaderboard(50);
-      let entries: LeaderboardEntry[] = topUsers.map((u, i) => ({
-        rank: 0,
-        name: u.name || 'Anonymous',
-        avatar: u.avatar || '👤',
-        weeklyMinutes: u.weeklyMinutes,
-        streak: u.streak,
-        level: u.level,
-        isPlayer: u.uid === user?.uid,
-      }));
-
-      if (user && !entries.some(e => e.isPlayer)) {
-        entries.push({
-          rank: 0,
-          name: state.profile.name,
-          avatar: state.profile.avatar,
-          weeklyMinutes: playerWeeklyMinutes,
-          streak: state.streak.current,
-          level: state.level,
-          isPlayer: true
-        });
-      } else if (user) {
-        const userEntry = entries.find(e => e.isPlayer);
-        if (userEntry && playerWeeklyMinutes > userEntry.weeklyMinutes) {
-          userEntry.weeklyMinutes = playerWeeklyMinutes;
-        }
-      }
-
-      entries.sort((a, b) => b.weeklyMinutes - a.weeklyMinutes);
-      entries.forEach((e, i) => e.rank = i + 1);
-
-      setLeaderboard(entries);
+      setRawRecords(topUsers);
+    } finally {
       setLoading(false);
     }
-    loadData();
-  }, [user, state.sessions, state.profile.name, state.profile.avatar, state.streak.current, state.level, playerWeeklyMinutes]);
+  }, []);
+
+  // Fetch only on mount
+  useEffect(() => {
+    loadLeaderboardData();
+  }, [loadLeaderboardData]);
+
+  // Compute merged leaderboard with current player state dynamically
+  const leaderboard = useMemo(() => {
+    let entries: LeaderboardEntry[] = rawRecords.map(u => ({
+      rank: 0,
+      name: u.name || 'Anonymous',
+      avatar: u.avatar || '👤',
+      weeklyMinutes: u.weeklyMinutes,
+      streak: u.streak,
+      level: u.level,
+      isPlayer: u.uid === user?.uid,
+    }));
+
+    if (user && !entries.some(e => e.isPlayer)) {
+      entries.push({
+        rank: 0,
+        name: state.profile.name,
+        avatar: state.profile.avatar,
+        weeklyMinutes: playerWeeklyMinutes,
+        streak: state.streak.current,
+        level: state.level,
+        isPlayer: true,
+      });
+    } else if (user) {
+      const userEntry = entries.find(e => e.isPlayer);
+      if (userEntry) {
+        userEntry.weeklyMinutes = Math.max(userEntry.weeklyMinutes, playerWeeklyMinutes);
+        userEntry.name = state.profile.name;
+        userEntry.avatar = state.profile.avatar;
+        userEntry.streak = state.streak.current;
+        userEntry.level = state.level;
+      }
+    }
+
+    entries.sort((a, b) => b.weeklyMinutes - a.weeklyMinutes);
+    entries.forEach((e, i) => (e.rank = i + 1));
+    return entries;
+  }, [rawRecords, user, state.profile.name, state.profile.avatar, state.streak.current, state.level, playerWeeklyMinutes]);
 
   const playerRank = leaderboard.find(e => e.isPlayer)?.rank ?? leaderboard.length;
 
@@ -130,11 +146,19 @@ export default function Leaderboard({ state, actions, user }: LeaderboardProps) 
 
       {/* Rankings Table */}
       <div className="glass-card overflow-hidden">
-        <div className="p-4 border-b border-glass-border">
+        <div className="p-4 border-b border-glass-border flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Users className="w-4 h-4 text-forest-400" />
             <h3 className="font-display font-bold text-forest-200">Global Rankings — This Week</h3>
           </div>
+          <button
+            onClick={loadLeaderboardData}
+            disabled={loading}
+            className="text-forest-500 hover:text-forest-300 transition-colors p-1 rounded-lg hover:bg-elevated"
+            title="Refresh leaderboard"
+          >
+            <RotateCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          </button>
         </div>
         <div className="divide-y divide-glass-border">
           {loading ? (
