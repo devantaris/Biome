@@ -11,6 +11,7 @@ import type { AppState, AppActions, ViewType } from '../types';
 import type { TimerActions } from '../hooks/useTimer';
 import { CATEGORIES, REWARDS } from '../constants';
 import { getTodayMinutes, getTodaySessions, getWeeklyStats, getGreeting, formatDayShort, formatDuration } from '../lib/analytics';
+import { getDailyChallenges, getChallengeProgress } from './Challenges';
 
 interface DashboardProps {
   state: AppState;
@@ -39,6 +40,11 @@ export default function Dashboard({ state, actions, setView, timerActions }: Das
     if (!lastSession?.rewardId) return null;
     return REWARDS.find(r => r.id === lastSession.rewardId) || null;
   }, [lastSession]);
+
+  const dailyChallenges = useMemo(() => getDailyChallenges(new Date()), []);
+  const completedChallengesCount = useMemo(() => {
+    return dailyChallenges.filter(c => getChallengeProgress(c, state).percentage >= 100).length;
+  }, [dailyChallenges, state]);
 
   const handleResumeLast = () => {
     if (!lastSession || !timerActions) {
@@ -237,6 +243,57 @@ export default function Dashboard({ state, actions, setView, timerActions }: Das
           </div>
         </section>
       </div>
+
+      {/* Daily Challenges */}
+      <section className="glass-card p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Target className="w-4 h-4 text-forest-400" />
+            <h3 className="font-display font-bold text-forest-200">Daily Challenges</h3>
+          </div>
+          <span className="text-xs font-bold text-forest-400 bg-forest-500/10 border border-forest-500/20 px-2.5 py-1 rounded-full">
+            {completedChallengesCount} / {dailyChallenges.length} done
+          </span>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {dailyChallenges.map((challenge) => {
+            const { current, percentage } = getChallengeProgress(challenge, state);
+            const isComplete = percentage >= 100;
+            return (
+              <div
+                key={challenge.id}
+                className={`p-3.5 rounded-xl border transition-all ${
+                  isComplete
+                    ? 'bg-forest-500/10 border-forest-500/30 text-forest-200'
+                    : 'bg-elevated/40 border-glass-border text-forest-300'
+                }`}
+              >
+                <div className="flex items-center gap-2.5 mb-1.5">
+                  <span className="text-xl">{isComplete ? '✅' : challenge.icon}</span>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-bold text-xs truncate">{challenge.title}</p>
+                    <p className="text-[10px] text-forest-500 truncate">{challenge.description}</p>
+                  </div>
+                </div>
+                <div className="space-y-1 mt-2">
+                  <div className="flex justify-between text-[9px] font-bold text-forest-500">
+                    <span>{current} / {challenge.target} {challenge.unit}</span>
+                    <span>{Math.round(percentage)}%</span>
+                  </div>
+                  <div className="h-1.5 bg-elevated rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all duration-500 ${
+                        isComplete ? 'bg-gradient-to-r from-forest-500 to-forest-400' : 'bg-forest-600'
+                      }`}
+                      style={{ width: `${percentage}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
 
       {/* Recent Forest Growth */}
       <section className="glass-card p-6">

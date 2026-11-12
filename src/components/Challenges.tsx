@@ -14,7 +14,7 @@ interface ChallengesProps {
 }
 
 // Generate deterministic daily challenges based on date
-function getDailyChallenges(date: Date): DailyChallenge[] {
+export function getDailyChallenges(date: Date): DailyChallenge[] {
   const seed = date.getFullYear() * 10000 + (date.getMonth() + 1) * 100 + date.getDate();
 
   const allChallenges: Omit<DailyChallenge, 'id' | 'expiresAt'>[] = [
@@ -53,7 +53,7 @@ function getDailyChallenges(date: Date): DailyChallenge[] {
   }));
 }
 
-function getChallengeProgress(challenge: DailyChallenge, state: AppState): { current: number; percentage: number } {
+export function getChallengeProgress(challenge: DailyChallenge, state: AppState): { current: number; percentage: number } {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 

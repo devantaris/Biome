@@ -28,7 +28,6 @@ const NAV_ITEMS: { id: ViewType; label: string; icon: React.ReactNode }[] = [
   { id: 'timeline',     label: 'Timeline',     icon: <CalendarDays /> },
   { id: 'achievements', label: 'Achievements', icon: <Trophy /> },
   { id: 'leaderboard',  label: 'Leaderboard',  icon: <Users /> },
-  { id: 'challenges',   label: 'Challenges',   icon: <Target /> },
 ];
 
 export default function Sidebar({ view, setView, state, user, onLogout }: SidebarProps) {
