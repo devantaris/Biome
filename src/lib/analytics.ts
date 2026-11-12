@@ -182,3 +182,114 @@ export function formatDayShort(date: string): string {
   const d = new Date(date);
   return ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.getDay()];
 }
+
+export interface PersonalInsights {
+  peakDayOfWeek: string | null;
+  peakHourRange: string | null;
+  averageSessionMinutes: number;
+  completionRate: number;
+  totalFocusHours: number;
+  totalSessionsCompleted: number;
+  topCategory: { name: string; minutes: number } | null;
+  insightMessage: string;
+}
+
+export function getPersonalInsights(state: AppState): PersonalInsights {
+  const sessions = state.sessions || [];
+  const completed = sessions.filter(s => s.completed);
+  const totalCompleted = completed.length;
+  const completionRate = sessions.length > 0 ? Math.round((totalCompleted / sessions.length) * 100) : 100;
+  const totalMinutes = completed.reduce((sum, s) => sum + s.duration, 0);
+  const totalFocusHours = Math.round((totalMinutes / 60) * 10) / 10;
+  const averageSessionMinutes = totalCompleted > 0 ? Math.round(totalMinutes / totalCompleted) : 0;
+
+  // Peak Day of Week
+  const dayMinutes: Record<number, number> = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
+  const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  completed.forEach(s => {
+    const day = new Date(s.startTime).getDay();
+    dayMinutes[day] = (dayMinutes[day] || 0) + s.duration;
+  });
+
+  let bestDayIdx: number | null = null;
+  let maxDayMinutes = 0;
+  for (let i = 0; i < 7; i++) {
+    if (dayMinutes[i] > maxDayMinutes) {
+      maxDayMinutes = dayMinutes[i];
+      bestDayIdx = i;
+    }
+  }
+  const peakDayOfWeek = bestDayIdx !== null && maxDayMinutes > 0 ? dayNames[bestDayIdx] : null;
+
+  // Peak Hour Range (2-hour blocks)
+  const hourBuckets: Record<number, number> = {};
+  completed.forEach(s => {
+    const hour = new Date(s.startTime).getHours();
+    const bucket = Math.floor(hour / 2) * 2; // 0, 2, 4, ..., 22
+    hourBuckets[bucket] = (hourBuckets[bucket] || 0) + s.duration;
+  });
+
+  let bestBucket: number | null = null;
+  let maxBucketMinutes = 0;
+  Object.entries(hourBuckets).forEach(([bucketStr, mins]) => {
+    if (mins > maxBucketMinutes) {
+      maxBucketMinutes = mins;
+      bestBucket = Number(bucketStr);
+    }
+  });
+
+  function formatHour(h: number): string {
+    const period = h >= 12 ? 'PM' : 'AM';
+    const hour12 = h % 12 === 0 ? 12 : h % 12;
+    return `${hour12} ${period}`;
+  }
+
+  const peakHourRange = bestBucket !== null && maxBucketMinutes > 0
+    ? `${formatHour(bestBucket)} – ${formatHour((bestBucket + 2) % 24)}`
+    : null;
+
+  // Top Category
+  const catMinutes: Record<string, number> = {};
+  completed.forEach(s => {
+    if (s.taskId) {
+      const task = state.tasks.find(t => t.id === s.taskId);
+      if (task) {
+        catMinutes[task.category] = (catMinutes[task.category] || 0) + s.duration;
+      }
+    }
+  });
+
+  let topCategory: { name: string; minutes: number } | null = null;
+  let maxCatMinutes = 0;
+  Object.entries(catMinutes).forEach(([cat, mins]) => {
+    if (mins > maxCatMinutes) {
+      maxCatMinutes = mins;
+      topCategory = { name: cat, minutes: mins };
+    }
+  });
+
+  // Insight message
+  let insightMessage = 'Start your first focus session to unlock deep personal productivity trends!';
+  if (totalCompleted === 0) {
+    insightMessage = 'Plant your first seed today by starting a 25-minute focus session.';
+  } else if (completionRate >= 90 && totalCompleted >= 3) {
+    insightMessage = `Incredible focus consistency (${completionRate}% completion rate)! Your momentum is peak.`;
+  } else if (peakDayOfWeek && peakHourRange) {
+    insightMessage = `Your prime productivity zone is ${peakDayOfWeek} around ${peakHourRange}. Protect that time!`;
+  } else if (peakDayOfWeek) {
+    insightMessage = `You are most productive on ${peakDayOfWeek}s. Schedule your hardest deep work then!`;
+  } else {
+    insightMessage = `You've banked ${totalFocusHours} hours of deep work with an average of ${averageSessionMinutes}m per session.`;
+  }
+
+  return {
+    peakDayOfWeek,
+    peakHourRange,
+    averageSessionMinutes,
+    completionRate,
+    totalFocusHours,
+    totalSessionsCompleted: totalCompleted,
+    topCategory,
+    insightMessage,
+  };
+}

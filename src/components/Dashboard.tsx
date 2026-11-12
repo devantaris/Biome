@@ -5,12 +5,12 @@ import React, { useMemo } from 'react';
 import { motion } from 'motion/react';
 import {
   Clock, CheckCircle2, TreePine, Flame, Zap, ChevronRight,
-  TrendingUp, Target, Tag, Play, RotateCcw
+  TrendingUp, Target, Tag, Play, RotateCcw, Sparkles
 } from 'lucide-react';
 import type { AppState, AppActions, ViewType } from '../types';
 import type { TimerActions } from '../hooks/useTimer';
 import { CATEGORIES, REWARDS } from '../constants';
-import { getTodayMinutes, getTodaySessions, getWeeklyStats, getGreeting, formatDayShort, formatDuration } from '../lib/analytics';
+import { getTodayMinutes, getTodaySessions, getWeeklyStats, getGreeting, formatDayShort, formatDuration, getPersonalInsights } from '../lib/analytics';
 import { getDailyChallenges, getChallengeProgress } from './Challenges';
 
 interface DashboardProps {
@@ -45,6 +45,8 @@ export default function Dashboard({ state, actions, setView, timerActions }: Das
   const completedChallengesCount = useMemo(() => {
     return dailyChallenges.filter(c => getChallengeProgress(c, state).percentage >= 100).length;
   }, [dailyChallenges, state]);
+
+  const insights = useMemo(() => getPersonalInsights(state), [state]);
 
   const handleResumeLast = () => {
     if (!lastSession || !timerActions) {
@@ -243,6 +245,58 @@ export default function Dashboard({ state, actions, setView, timerActions }: Das
           </div>
         </section>
       </div>
+
+      {/* Personal Insights */}
+      <section className="glass-card p-6 border-forest-500/20 bg-gradient-to-br from-forest-900/30 via-surface to-surface">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-gold-400" />
+            <h3 className="font-display font-bold text-forest-200">Personal Insights</h3>
+          </div>
+          <span className="text-[10px] font-bold text-forest-400 bg-forest-500/10 border border-forest-500/20 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+            Productivity Trends
+          </span>
+        </div>
+
+        <div className="text-sm text-forest-200 mb-4 bg-elevated/40 p-3 rounded-xl border border-glass-border flex items-center gap-2.5">
+          <span className="text-xl flex-shrink-0">💡</span>
+          <span className="leading-relaxed">{insights.insightMessage}</span>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="p-3 rounded-xl bg-elevated/30 border border-glass-border text-center">
+            <span className="text-[10px] text-forest-500 font-bold uppercase tracking-wider block mb-1">Peak Day</span>
+            <span className="text-base font-display font-bold text-forest-100">
+              {insights.peakDayOfWeek || '–'}
+            </span>
+            <span className="text-[10px] text-forest-500 block mt-0.5">Most focused</span>
+          </div>
+
+          <div className="p-3 rounded-xl bg-elevated/30 border border-glass-border text-center">
+            <span className="text-[10px] text-forest-500 font-bold uppercase tracking-wider block mb-1">Prime Hours</span>
+            <span className="text-base font-display font-bold text-blue-400">
+              {insights.peakHourRange || '–'}
+            </span>
+            <span className="text-[10px] text-forest-500 block mt-0.5">Peak energy window</span>
+          </div>
+
+          <div className="p-3 rounded-xl bg-elevated/30 border border-glass-border text-center">
+            <span className="text-[10px] text-forest-500 font-bold uppercase tracking-wider block mb-1">Avg Session</span>
+            <span className="text-base font-display font-bold text-forest-300">
+              {insights.averageSessionMinutes > 0 ? `${insights.averageSessionMinutes}m` : '–'}
+            </span>
+            <span className="text-[10px] text-forest-500 block mt-0.5">Per focus block</span>
+          </div>
+
+          <div className="p-3 rounded-xl bg-elevated/30 border border-glass-border text-center">
+            <span className="text-[10px] text-forest-500 font-bold uppercase tracking-wider block mb-1">Discipline</span>
+            <span className="text-base font-display font-bold text-gold-400">
+              {insights.completionRate}%
+            </span>
+            <span className="text-[10px] text-forest-500 block mt-0.5">Completion rate</span>
+          </div>
+        </div>
+      </section>
 
       {/* Daily Challenges */}
       <section className="glass-card p-6">

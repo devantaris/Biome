@@ -8,6 +8,7 @@ import {
   formatDuration,
   formatDayShort,
   getTimeOfDay,
+  getPersonalInsights,
 } from '../analytics';
 import type { AppState, FocusSession } from '../../types';
 import { INITIAL_STATE } from '../../constants';
@@ -210,6 +211,41 @@ describe('Analytics Engine', () => {
       expect(weekly.totalMinutes).toBe(60);
       expect(weekly.categoryBreakdown['code']).toBe(40);
       expect(weekly.categoryBreakdown['unlinked']).toBe(20);
+    });
+  });
+
+  describe('getPersonalInsights', () => {
+    it('returns sensible defaults for empty sessions', () => {
+      const state: AppState = { ...INITIAL_STATE, sessions: [] };
+      const insights = getPersonalInsights(state);
+      expect(insights.completionRate).toBe(100);
+      expect(insights.totalSessionsCompleted).toBe(0);
+      expect(insights.totalFocusHours).toBe(0);
+      expect(insights.averageSessionMinutes).toBe(0);
+      expect(insights.peakDayOfWeek).toBeNull();
+      expect(insights.peakHourRange).toBeNull();
+    });
+
+    it('identifies peak day, hour, completion rate and average minutes', () => {
+      const tues10am = new Date('2026-05-12T10:00:00').getTime();
+      const state: AppState = {
+        ...INITIAL_STATE,
+        tasks: [
+          { id: 't1', title: 'Deep Work', completed: true, category: 'work', priority: 'high', createdAt: tues10am, dueDate: '2026-05-12', actualMinutes: 50 },
+        ],
+        sessions: [
+          { id: 's1', startTime: tues10am, endTime: tues10am + 3000000, duration: 50, completed: true, date: '2026-05-12', taskId: 't1' },
+          { id: 's2', startTime: tues10am - 86400000, endTime: tues10am - 86400000 + 1500000, duration: 25, completed: false, date: '2026-05-11' },
+        ],
+      };
+
+      const insights = getPersonalInsights(state);
+      expect(insights.totalSessionsCompleted).toBe(1);
+      expect(insights.completionRate).toBe(50);
+      expect(insights.averageSessionMinutes).toBe(50);
+      expect(insights.peakDayOfWeek).toBe('Tuesday');
+      expect(insights.peakHourRange).toBe('10 AM – 12 PM');
+      expect(insights.topCategory?.name).toBe('work');
     });
   });
 });
