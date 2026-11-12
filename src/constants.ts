@@ -45,6 +45,7 @@ export const CATEGORIES: Category[] = [
 export const AMBIENT_SOUNDS: AmbientSoundDef[] = [
   { id: 'silence',   name: 'Silence',       icon: '🔇', description: 'Pure silence for deep focus' },
   { id: 'rain',      name: 'Gentle Rain',   icon: '🌧️', description: 'Soft rain on leaves' },
+  { id: 'thunder',   name: 'Thunderstorm',  icon: '⛈️', description: 'Rain with distant rumbling thunder' },
   { id: 'forest',    name: 'Forest',        icon: '🌲', description: 'Birds and rustling trees' },
   { id: 'waves',     name: 'Ocean Waves',   icon: '🌊', description: 'Rhythmic ocean waves' },
   { id: 'fire',      name: 'Fireplace',     icon: '🔥', description: 'Crackling fireplace' },

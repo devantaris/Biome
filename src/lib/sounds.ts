@@ -3,7 +3,7 @@
 // (Web Audio API — no audio files needed)
 // ============================================
 
-type SoundType = 'rain' | 'forest' | 'waves' | 'fire' | 'wind' | 'brown' | 'white' | 'silence';
+type SoundType = 'rain' | 'forest' | 'waves' | 'fire' | 'wind' | 'brown' | 'white' | 'thunder' | 'silence';
 
 class AmbientSoundEngine {
   private ctx: AudioContext | null = null;
@@ -56,6 +56,7 @@ class AmbientSoundEngine {
       case 'waves': this.createWaves(ctx); break;
       case 'fire': this.createFire(ctx); break;
       case 'wind': this.createWind(ctx); break;
+      case 'thunder': this.createThunder(ctx); break;
     }
   }
 
@@ -307,6 +308,40 @@ class AmbientSoundEngine {
     lfo.start();
 
     this.activeNodes.push(bp, lfo, lfoGain, windGain);
+  }
+
+  private createThunder(ctx: AudioContext) {
+    // Rain background + low frequency resonant rumble
+    this.createRain(ctx);
+
+    const scheduleThunder = () => {
+      if (!this.isPlaying || this.activeType !== 'thunder') return;
+      const now = ctx.currentTime;
+      const noise = this.createNoiseBuffer(ctx, 3);
+      const src = ctx.createBufferSource();
+      src.buffer = noise;
+
+      const lp = ctx.createBiquadFilter();
+      lp.type = 'lowpass';
+      lp.frequency.setValueAtTime(140, now);
+      lp.frequency.linearRampToValueAtTime(70, now + 1.8);
+
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0, now);
+      gain.gain.linearRampToValueAtTime(0.35, now + 0.15);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 2.5);
+
+      src.connect(lp);
+      lp.connect(gain);
+      gain.connect(this.masterGain!);
+      src.start(now);
+      src.stop(now + 2.8);
+
+      const nextDelay = 8000 + Math.random() * 12000;
+      setTimeout(scheduleThunder, nextDelay);
+    };
+
+    setTimeout(scheduleThunder, 2500);
   }
 
   // ─── Notification Sounds ───────────────────
