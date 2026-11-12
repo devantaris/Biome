@@ -40,15 +40,16 @@ export function useTimer(state: AppState, actions: AppActions): { timer: TimerSt
   const [selectedItem, setSelectedItem] = useState<RewardItem>(REWARDS[0]);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [selectedSound, setSelectedSound] = useState('silence');
+  const [breakDuration, setBreakDuration] = useState(5);
   const [sessionStartTime, setSessionStartTime] = useState<number | null>(null);
   const [showReward, setShowReward] = useState<RewardItem | null>(null);
   const [pomodoroCount, setPomodoroCount] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const progress = isActive && phase === 'focusing'
-    ? (1 - timeLeft / (selectedDuration * 60)) * 100
+    ? Math.min(100, Math.max(0, (1 - timeLeft / (selectedDuration * 60)) * 100))
     : isActive && phase === 'break'
-      ? (1 - timeLeft / (timeLeft + 1)) * 100 // approximate for breaks
+      ? Math.min(100, Math.max(0, (1 - timeLeft / ((breakDuration || 1) * 60)) * 100))
       : 0;
 
   // Timer tick
@@ -206,6 +207,7 @@ export function useTimer(state: AppState, actions: AppActions): { timer: TimerSt
 
   const startBreak = useCallback((isLong: boolean) => {
     const mins = isLong ? state.settings.longBreakMinutes : state.settings.shortBreakMinutes;
+    setBreakDuration(mins);
     setTimeLeft(mins * 60);
     setIsActive(true);
     setPhase('break');
