@@ -32,12 +32,17 @@ export interface TimerActions {
   skipBreak: () => void;
 }
 
+export function getBestRewardForDuration(mins: number): RewardItem {
+  const eligible = REWARDS.filter(r => r.type !== 'dead' && r.minDuration <= mins);
+  return eligible[eligible.length - 1] || REWARDS[0];
+}
+
 export function useTimer(state: AppState, actions: AppActions): { timer: TimerState; timerActions: TimerActions; showReward: RewardItem | null; clearReward: () => void } {
   const [timeLeft, setTimeLeft] = useState(0);
   const [isActive, setIsActive] = useState(false);
   const [phase, setPhase] = useState<TimerPhase>('idle');
   const [selectedDuration, setSelectedDuration] = useState(25);
-  const [selectedItem, setSelectedItem] = useState<RewardItem>(REWARDS[0]);
+  const [selectedItem, setSelectedItem] = useState<RewardItem>(() => getBestRewardForDuration(25));
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [selectedSound, setSelectedSound] = useState('silence');
   const [breakDuration, setBreakDuration] = useState(5);
@@ -306,6 +311,7 @@ export function useTimer(state: AppState, actions: AppActions): { timer: TimerSt
     if (window.electronAPI?.onQuickFocus) {
       const cleanup = window.electronAPI.onQuickFocus((minutes: number) => {
         setSelectedDuration(minutes);
+        setSelectedItem(getBestRewardForDuration(minutes));
         setTimeout(() => {
           setTimeLeft(minutes * 60);
           setIsActive(true);
@@ -331,11 +337,8 @@ export function useTimer(state: AppState, actions: AppActions): { timer: TimerSt
 
   const setDuration = useCallback((mins: number) => {
     setSelectedDuration(mins);
-    if (selectedItem.minDuration > mins) {
-      const validItems = REWARDS.filter(r => r.type !== 'dead' && r.minDuration <= mins);
-      setSelectedItem(validItems[validItems.length - 1] || REWARDS[0]);
-    }
-  }, [selectedItem]);
+    setSelectedItem(getBestRewardForDuration(mins));
+  }, []);
 
   const timer: TimerState = {
     timeLeft,
