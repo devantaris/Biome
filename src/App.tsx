@@ -22,7 +22,6 @@ import Achievements from './components/Achievements';
 import Leaderboard from './components/Leaderboard';
 import Challenges from './components/Challenges';
 import Settings from './components/Settings';
-import ProfileView from './components/ProfileView';
 import CalendarView from './components/Calendar';
 import AuthGate from './components/AuthGate';
 import MobileNavBar from './components/MobileNavBar';
@@ -133,11 +132,8 @@ export default function App() {
             {view === 'challenges' && (
               <Challenges key="challenges" state={state} actions={actions} />
             )}
-            {view === 'settings' && (
+            {(view === 'settings' || view === 'profile') && (
               <Settings key="settings" state={state} actions={actions} onLogout={handleLogout} />
-            )}
-            {view === 'profile' && (
-              <ProfileView key="profile" state={state} actions={actions} />
             )}
           </AnimatePresence>
         </main>

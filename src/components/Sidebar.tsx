@@ -126,18 +126,12 @@ export default function Sidebar({ view, setView, state, user, onLogout }: Sideba
         ))}
       </nav>
 
-      {/* Settings & Profile (bottom) */}
+      {/* Settings (bottom) */}
       <div className="p-3 border-t border-glass-border">
-        <NavItem
-          icon={<UserIcon />}
-          label="Profile"
-          active={view === 'profile'}
-          onClick={() => setView('profile')}
-        />
         <NavItem
           icon={<SettingsIcon />}
           label="Settings"
-          active={view === 'settings'}
+          active={view === 'settings' || view === 'profile'}
           onClick={() => setView('settings')}
         />
       </div>
