@@ -29,7 +29,7 @@ export default function MobileNavBar({ view, setView }: MobileNavBarProps) {
             }`}
           >
             <div className={`transition-transform duration-200 mb-1 ${isActive ? 'scale-110' : 'scale-100'}`}>
-              {React.cloneElement(item.icon as React.ReactElement, {
+              {React.cloneElement(item.icon as React.ReactElement<{ className?: string }>, {
                 className: `w-5 h-5 ${isActive ? 'stroke-[2.5px]' : 'stroke-2'}`
               })}
             </div>
