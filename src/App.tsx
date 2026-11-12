@@ -110,7 +110,7 @@ export default function App() {
         <main className="flex-1 p-4 md:p-8 pb-24 md:pb-8 md:overflow-y-auto md:h-screen scroll-smooth">
           <AnimatePresence mode="wait">
             {view === 'dashboard' && (
-              <Dashboard key="dashboard" state={state} actions={actions} setView={setView} />
+              <Dashboard key="dashboard" state={state} actions={actions} setView={setView} timerActions={timerActions} />
             )}
             {view === 'timer' && (
               <TimerView key="timer" state={state} timer={timer} timerActions={timerActions} showReward={showReward} clearReward={clearReward} />

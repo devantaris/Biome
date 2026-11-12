@@ -5,19 +5,21 @@ import React, { useMemo } from 'react';
 import { motion } from 'motion/react';
 import {
   Clock, CheckCircle2, TreePine, Flame, Zap, ChevronRight,
-  TrendingUp, Target, Tag
+  TrendingUp, Target, Tag, Play, RotateCcw
 } from 'lucide-react';
 import type { AppState, AppActions, ViewType } from '../types';
-import { CATEGORIES } from '../constants';
+import type { TimerActions } from '../hooks/useTimer';
+import { CATEGORIES, REWARDS } from '../constants';
 import { getTodayMinutes, getTodaySessions, getWeeklyStats, getGreeting, formatDayShort, formatDuration } from '../lib/analytics';
 
 interface DashboardProps {
   state: AppState;
   actions: AppActions;
   setView: (view: ViewType) => void;
+  timerActions?: TimerActions;
 }
 
-export default function Dashboard({ state, actions, setView }: DashboardProps) {
+export default function Dashboard({ state, actions, setView, timerActions }: DashboardProps) {
   const greeting = useMemo(() => getGreeting(), []);
   const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
   const todayMinutes = useMemo(() => getTodayMinutes(state.sessions), [state.sessions]);
@@ -28,6 +30,35 @@ export default function Dashboard({ state, actions, setView }: DashboardProps) {
   const todayTasks = useMemo(() => state.tasks.filter(t => t.dueDate === todayStr), [state.tasks, todayStr]);
   const activeTasks = useMemo(() => todayTasks.filter(t => !t.completed).length, [todayTasks]);
   const completedTasks = useMemo(() => todayTasks.filter(t => t.completed).length, [todayTasks]);
+
+  const lastSession = useMemo(() => {
+    return [...state.sessions].reverse().find(s => s.completed);
+  }, [state.sessions]);
+
+  const lastReward = useMemo(() => {
+    if (!lastSession?.rewardId) return null;
+    return REWARDS.find(r => r.id === lastSession.rewardId) || null;
+  }, [lastSession]);
+
+  const handleResumeLast = () => {
+    if (!lastSession || !timerActions) {
+      setView('timer');
+      return;
+    }
+    timerActions.setDuration(lastSession.duration);
+    if (lastReward) {
+      timerActions.setItem(lastReward);
+    }
+    if (lastSession.taskId) {
+      const task = state.tasks.find(t => t.id === lastSession.taskId);
+      if (task) timerActions.setTask(task);
+    }
+    if (lastSession.ambientSound) {
+      timerActions.setSound(lastSession.ambientSound);
+    }
+    setView('timer');
+    timerActions.start();
+  };
 
   return (
     <motion.div
@@ -42,13 +73,25 @@ export default function Dashboard({ state, actions, setView }: DashboardProps) {
           <h2 className="text-3xl font-display font-bold text-forest-100">{greeting}, {state.profile.name}! 🌲</h2>
           <p className="text-forest-500 mt-1">Here's how your forest is growing today.</p>
         </div>
-        <button
-          onClick={() => setView('timer')}
-          className="w-full sm:w-auto bg-gradient-to-r from-forest-600 to-forest-500 text-white px-6 py-3 rounded-2xl font-bold flex items-center justify-center gap-2 shadow-2xl shadow-forest-900/40 hover:from-forest-500 hover:to-forest-400 hover:shadow-forest-600/20 transition-all group"
-        >
-          <Zap className="w-4 h-4 fill-current group-hover:scale-110 transition-transform" />
-          Quick Focus
-        </button>
+        <div className="flex flex-wrap sm:flex-nowrap gap-2 w-full sm:w-auto">
+          {lastSession && timerActions && (
+            <button
+              onClick={handleResumeLast}
+              className="flex-1 sm:flex-initial bg-elevated border border-forest-500/30 hover:border-forest-400 text-forest-200 px-5 py-3 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-forest-600/10 transition-all text-sm"
+              title={`Resume ${lastSession.duration}m focus with ${lastReward?.name || 'session'}`}
+            >
+              <RotateCcw className="w-4 h-4 text-forest-400" />
+              Resume ({lastSession.duration}m)
+            </button>
+          )}
+          <button
+            onClick={() => setView('timer')}
+            className="flex-1 sm:flex-initial bg-gradient-to-r from-forest-600 to-forest-500 text-white px-6 py-3 rounded-2xl font-bold flex items-center justify-center gap-2 shadow-2xl shadow-forest-900/40 hover:from-forest-500 hover:to-forest-400 hover:shadow-forest-600/20 transition-all group text-sm"
+          >
+            <Zap className="w-4 h-4 fill-current group-hover:scale-110 transition-transform" />
+            Quick Focus
+          </button>
+        </div>
       </header>
 
       {/* Daily Goal Progress */}
