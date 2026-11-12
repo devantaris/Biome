@@ -11,6 +11,8 @@ export type TimerPhase = 'idle' | 'focusing' | 'break';
 export interface TimerState {
   timeLeft: number;
   isActive: boolean;
+  isPaused: boolean;
+  pausesLeft: number;
   phase: TimerPhase;
   selectedDuration: number;
   selectedItem: RewardItem;
@@ -27,6 +29,8 @@ export interface TimerActions {
   setTask: (task: Task | null) => void;
   setSound: (soundId: string) => void;
   start: () => void;
+  pause: () => void;
+  resume: () => void;
   giveUp: () => void;
   startBreak: (isLong: boolean) => void;
   skipBreak: () => void;
@@ -40,6 +44,8 @@ export function getBestRewardForDuration(mins: number): RewardItem {
 export function useTimer(state: AppState, actions: AppActions): { timer: TimerState; timerActions: TimerActions; showReward: RewardItem | null; clearReward: () => void } {
   const [timeLeft, setTimeLeft] = useState(0);
   const [isActive, setIsActive] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [pausesLeft, setPausesLeft] = useState(2);
   const [phase, setPhase] = useState<TimerPhase>('idle');
   const [selectedDuration, setSelectedDuration] = useState(25);
   const [selectedItem, setSelectedItem] = useState<RewardItem>(() => getBestRewardForDuration(25));
@@ -77,7 +83,7 @@ export function useTimer(state: AppState, actions: AppActions): { timer: TimerSt
 
   // Timer tick
   useEffect(() => {
-    if (isActive && timeLeft > 0) {
+    if (isActive && !isPaused && timeLeft > 0) {
       timerRef.current = setInterval(() => {
         setTimeLeft(prev => prev - 1);
       }, 1000);
@@ -91,10 +97,12 @@ export function useTimer(state: AppState, actions: AppActions): { timer: TimerSt
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [isActive, timeLeft]);
+  }, [isActive, isPaused, timeLeft]);
 
   const handleCompletion = useCallback(() => {
     setIsActive(false);
+    setIsPaused(false);
+    setPausesLeft(2);
     setPhase('idle');
     if (timerRef.current) clearInterval(timerRef.current);
 
@@ -171,6 +179,8 @@ export function useTimer(state: AppState, actions: AppActions): { timer: TimerSt
 
   const handleBreakEnd = useCallback(() => {
     setIsActive(false);
+    setIsPaused(false);
+    setPausesLeft(2);
     setPhase('idle');
     if (timerRef.current) clearInterval(timerRef.current);
 
@@ -188,6 +198,8 @@ export function useTimer(state: AppState, actions: AppActions): { timer: TimerSt
   const start = useCallback(() => {
     setTimeLeft(selectedDuration * 60);
     setIsActive(true);
+    setIsPaused(false);
+    setPausesLeft(2);
     setPhase('focusing');
     setSessionStartTime(Date.now());
 
@@ -202,8 +214,25 @@ export function useTimer(state: AppState, actions: AppActions): { timer: TimerSt
     }
   }, [selectedDuration, selectedSound, state.settings.ambientVolume, state.settings.alwaysOnTop]);
 
+  const pause = useCallback(() => {
+    if (!isActive || isPaused || pausesLeft <= 0) return;
+    setIsPaused(true);
+    setPausesLeft(prev => prev - 1);
+    soundEngine.stop();
+  }, [isActive, isPaused, pausesLeft]);
+
+  const resume = useCallback(() => {
+    if (!isActive || !isPaused) return;
+    setIsPaused(false);
+    if (selectedSound !== 'silence') {
+      soundEngine.play(selectedSound as any, state.settings.ambientVolume);
+    }
+  }, [isActive, isPaused, selectedSound, state.settings.ambientVolume]);
+
   const giveUp = useCallback(() => {
     setIsActive(false);
+    setIsPaused(false);
+    setPausesLeft(2);
     setPhase('idle');
     if (timerRef.current) clearInterval(timerRef.current);
 
@@ -343,6 +372,8 @@ export function useTimer(state: AppState, actions: AppActions): { timer: TimerSt
   const timer: TimerState = {
     timeLeft,
     isActive,
+    isPaused,
+    pausesLeft,
     phase,
     selectedDuration,
     selectedItem,
@@ -359,6 +390,8 @@ export function useTimer(state: AppState, actions: AppActions): { timer: TimerSt
     setTask: setSelectedTask,
     setSound: setSelectedSound,
     start,
+    pause,
+    resume,
     giveUp,
     startBreak,
     skipBreak,

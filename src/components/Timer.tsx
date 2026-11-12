@@ -3,7 +3,7 @@
 // ============================================
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Play, Square, Coffee, SkipForward, Volume2, VolumeX, AlertTriangle } from 'lucide-react';
+import { Play, Pause, Square, Coffee, SkipForward, Volume2, VolumeX, AlertTriangle } from 'lucide-react';
 import type { AppState, RewardItem } from '../types';
 import type { TimerState, TimerActions } from '../hooks/useTimer';
 import { REWARDS, TIMER_PRESETS, AMBIENT_SOUNDS, RARITY_COLORS, RARITY_BG } from '../constants';
@@ -78,9 +78,15 @@ export default function TimerView({ state, timer, timerActions, showReward, clea
           </span>
           <div className="mt-2">
             {timer.isActive ? (
-              <span className={`text-xs font-bold uppercase tracking-widest animate-pulse ${timer.phase === 'break' ? 'text-blue-400' : 'text-forest-400'}`}>
-                {timer.phase === 'break' ? '☕ Break Time' : `🌱 Growing ${timer.selectedItem.name}`}
-              </span>
+              timer.isPaused ? (
+                <span className="text-xs font-bold uppercase tracking-widest text-amber-400 animate-pulse">
+                  ⏸️ Paused ({timer.pausesLeft} left)
+                </span>
+              ) : (
+                <span className={`text-xs font-bold uppercase tracking-widest animate-pulse ${timer.phase === 'break' ? 'text-blue-400' : 'text-forest-400'}`}>
+                  {timer.phase === 'break' ? '☕ Break Time' : `🌱 Growing ${timer.selectedItem.name}`}
+                </span>
+              )
             ) : (
               <span className="text-xs font-bold text-forest-600 uppercase tracking-widest">Ready to focus</span>
             )}
@@ -232,14 +238,37 @@ export default function TimerView({ state, timer, timerActions, showReward, clea
             <span className="text-[10px] text-forest-500 font-bold ml-1">Session #{timer.pomodoroCount + 1}</span>
           </div>
 
-          {/* Give Up Button */}
-          <button
-            onClick={() => setShowGiveUpConfirm(true)}
-            className="px-8 py-3 bg-red-500/10 text-red-400 rounded-xl font-bold border border-red-500/20 hover:bg-red-500/20 transition-all flex items-center gap-2"
-          >
-            <Square className="w-4 h-4 fill-current" />
-            Give Up
-          </button>
+          {/* Controls: Pause/Resume + Give Up */}
+          <div className="flex items-center gap-3 w-full justify-center">
+            {timer.isPaused ? (
+              <button
+                onClick={timerActions.resume}
+                className="px-6 py-3 bg-forest-600 hover:bg-forest-500 text-white rounded-xl font-bold shadow-lg shadow-forest-900/40 transition-all flex items-center gap-2"
+              >
+                <Play className="w-4 h-4 fill-current" />
+                Resume
+              </button>
+            ) : (
+              <button
+                onClick={timerActions.pause}
+                disabled={timer.pausesLeft <= 0}
+                className="px-6 py-3 bg-amber-500/10 text-amber-300 border border-amber-500/20 hover:bg-amber-500/20 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl font-bold transition-all flex items-center gap-2"
+                title={timer.pausesLeft > 0 ? `${timer.pausesLeft} pauses remaining` : 'No pauses remaining this session'}
+              >
+                <Pause className="w-4 h-4 fill-current" />
+                Pause ({timer.pausesLeft})
+              </button>
+            )}
+
+            {/* Give Up Button */}
+            <button
+              onClick={() => setShowGiveUpConfirm(true)}
+              className="px-6 py-3 bg-red-500/10 text-red-400 rounded-xl font-bold border border-red-500/20 hover:bg-red-500/20 transition-all flex items-center gap-2"
+            >
+              <Square className="w-4 h-4 fill-current" />
+              Give Up
+            </button>
+          </div>
         </div>
       ) : (
         /* ─── Session Complete — Break Options ─── */
