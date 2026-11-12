@@ -6,6 +6,7 @@ import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ChevronLeft, ChevronRight, Clock, CheckSquare, TreePine, Maximize2 } from 'lucide-react';
 import type { AppState } from '../types';
+import { REWARDS } from '../constants';
 
 interface CalendarProps {
   state: AppState;
@@ -307,18 +308,98 @@ export default function CalendarView({ state }: CalendarProps) {
             {/* Tasks for that day */}
             {selectedData && selectedData.tasksTotal > 0 && (
               <div className="mt-4 pt-4 border-t border-glass-border space-y-1.5">
-                <p className="text-[10px] font-bold text-forest-500 uppercase tracking-wider mb-2">Tasks</p>
+                <p className="text-[10px] font-bold text-forest-500 uppercase tracking-wider mb-2">Tasks ({state.tasks.filter(t => t.dueDate === selectedDay).length})</p>
                 {state.tasks.filter(t => t.dueDate === selectedDay).map(t => (
-                  <div key={t.id} className="flex items-center gap-2 text-sm">
+                  <div key={t.id} className="flex items-center gap-2 p-2 rounded-lg bg-elevated/40 text-sm">
                     <span>{t.completed ? '✅' : '⬜'}</span>
-                    <span className={t.completed ? 'text-forest-500 line-through' : 'text-forest-300'}>{t.title}</span>
+                    <span className={t.completed ? 'text-forest-500 line-through' : 'text-forest-200'}>{t.title}</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-forest-800/40 text-forest-400 capitalize">{t.category}</span>
                     {t.actualMinutes > 0 && (
-                      <span className="ml-auto text-[10px] text-forest-600">{t.actualMinutes}m</span>
+                      <span className="ml-auto text-xs font-mono text-forest-400">{t.actualMinutes}m spent</span>
                     )}
                   </div>
                 ))}
               </div>
             )}
+
+            {/* Sessions list for that day */}
+            {(() => {
+              const daySessions = state.sessions.filter(s => {
+                const d = s.date || toDateStr(new Date(s.startTime));
+                return d === selectedDay;
+              });
+
+              if (daySessions.length === 0) return null;
+
+              return (
+                <div className="mt-4 pt-4 border-t border-glass-border space-y-2">
+                  <p className="text-[10px] font-bold text-forest-500 uppercase tracking-wider">
+                    Focus Sessions ({daySessions.length})
+                  </p>
+                  <div className="space-y-1.5 max-h-48 overflow-y-auto custom-scrollbar">
+                    {daySessions.map(s => {
+                      const sessionTask = s.taskId ? state.tasks.find(t => t.id === s.taskId) : null;
+                      const earnedReward = s.rewardId ? REWARDS.find(r => r.id === s.rewardId) : null;
+                      return (
+                        <div key={s.id} className="flex items-center justify-between p-2 rounded-lg bg-elevated/40 text-xs">
+                          <div className="flex items-center gap-2">
+                            <span>{s.completed ? '🎯' : '🛑'}</span>
+                            <div>
+                              <span className="font-bold text-forest-200">
+                                {new Date(s.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                              <span className="text-forest-500 ml-1.5">({s.duration} min)</span>
+                              {sessionTask && (
+                                <p className="text-[11px] text-forest-400 mt-0.5">Task: {sessionTask.title}</p>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {earnedReward && (
+                              <span className="text-base" title={`Earned: ${earnedReward.name}`}>
+                                {earnedReward.icon}
+                              </span>
+                            )}
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                              s.completed ? 'bg-forest-500/20 text-forest-300' : 'bg-red-500/20 text-red-400'
+                            }`}>
+                              {s.completed ? 'Completed' : 'Abandoned'}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Planted items for that day */}
+            {(() => {
+              const plantedToday = state.forest.filter(f => {
+                if (f.type === 'dead') return false;
+                const ts = f.placedAt || f.timestamp;
+                return toDateStr(new Date(ts)) === selectedDay;
+              });
+
+              if (plantedToday.length === 0) return null;
+
+              return (
+                <div className="mt-4 pt-4 border-t border-glass-border">
+                  <p className="text-[10px] font-bold text-forest-500 uppercase tracking-wider mb-2">
+                    Items Planted in Forest ({plantedToday.length})
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {plantedToday.map(item => (
+                      <div key={item.id} className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-forest-900/30 border border-forest-500/20 text-xs">
+                        <span className="text-lg">{item.icon}</span>
+                        <span className="text-forest-300 font-medium">{item.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
           </motion.div>
         )}
       </AnimatePresence>
