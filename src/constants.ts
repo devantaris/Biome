@@ -53,29 +53,6 @@ export const AMBIENT_SOUNDS: AmbientSoundDef[] = [
   { id: 'white',     name: 'White Noise',   icon: '⚪', description: 'Classic white noise' },
 ];
 
-// ─── Fake Leaderboard Players ─────────────────
-export const FAKE_PLAYERS = [
-  { name: 'Luna Evergreen',    avatar: '🧝‍♀️' },
-  { name: 'Marcus Stone',      avatar: '🧑‍💻' },
-  { name: 'Aiko Tanaka',       avatar: '👩‍🎓' },
-  { name: 'Viktor Ash',        avatar: '🧔' },
-  { name: 'Priya Sharma',      avatar: '👩‍🔬' },
-  { name: 'Kai Nakamura',      avatar: '🧑‍🎨' },
-  { name: 'Elena Frost',       avatar: '❄️' },
-  { name: 'Django Rivers',     avatar: '🏄' },
-  { name: 'Mira Solstice',     avatar: '🌙' },
-  { name: 'Leo Thorne',        avatar: '🦁' },
-  { name: 'Sofia Chen',        avatar: '🎻' },
-  { name: 'Axel Knight',       avatar: '⚔️' },
-  { name: 'Nadia Bloom',       avatar: '🌺' },
-  { name: 'Orion Drake',       avatar: '🐉' },
-  { name: 'Zara Phoenix',      avatar: '🔥' },
-  { name: 'Atlas Peak',        avatar: '⛰️' },
-  { name: 'Ruby Cascade',      avatar: '💎' },
-  { name: 'Felix Storm',       avatar: '⚡' },
-  { name: 'Ivy Thornewood',    avatar: '🌿' },
-];
-
 // ─── Grid ─────────────────────────────────────
 export const GRID_SIZE = 10; // kept for legacy references
 export const INITIAL_GRID_SIZE = 10;
