@@ -5,7 +5,7 @@ import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import {
   Timer, Bell, Monitor, Database, User, Download, Upload,
-  RotateCcw, Info, Keyboard, Volume2
+  RotateCcw, Info, Keyboard, Volume2, Sparkles, Check, Shield
 } from 'lucide-react';
 import type { AppState, AppActions } from '../types';
 
@@ -190,6 +190,82 @@ export default function Settings({ state, actions, onLogout }: SettingsProps) {
       <SettingsSection icon={<Keyboard />} title="Keyboard Shortcuts">
         <div className="space-y-3">
           <ShortcutRow keys={['Ctrl', 'Shift', 'F']} description="Toggle focus from anywhere (global)" />
+        </div>
+      </SettingsSection>
+
+      {/* Plans & Pricing */}
+      <SettingsSection icon={<Sparkles className="text-gold-400" />} title="Plans & Pricing">
+        <div className="space-y-4">
+          <div className="p-3 bg-forest-500/10 border border-forest-500/20 rounded-xl text-xs text-forest-300 leading-relaxed flex items-center gap-2.5">
+            <span className="text-xl flex-shrink-0">🌱</span>
+            <span>
+              <strong>All features are 100% free!</strong> Biome is currently completely free for everyone. Premium tier expansion options are in development.
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {/* Free Tier */}
+            <div className="p-4 rounded-xl border border-forest-500/40 bg-forest-900/20 flex flex-col justify-between relative">
+              <span className="absolute top-3 right-3 text-[9px] font-bold uppercase tracking-wider bg-forest-500/20 text-forest-300 px-2 py-0.5 rounded-full">
+                Current Plan
+              </span>
+              <div>
+                <span className="text-xs font-bold text-forest-400 uppercase tracking-wider block">Seedling</span>
+                <p className="text-2xl font-display font-bold text-forest-100 mt-1">$0 <span className="text-xs text-forest-500 font-normal">/ forever</span></p>
+                <ul className="space-y-1.5 mt-3 text-xs text-forest-300">
+                  <li className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-forest-400 flex-shrink-0" /> Full Pomodoro & Custom Timers</li>
+                  <li className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-forest-400 flex-shrink-0" /> Forest World & Territory Expansion</li>
+                  <li className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-forest-400 flex-shrink-0" /> Task Manager & Recurring Tasks</li>
+                  <li className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-forest-400 flex-shrink-0" /> Ambient Sounds & Audio</li>
+                  <li className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-forest-400 flex-shrink-0" /> Cloud Sync & Leaderboard</li>
+                </ul>
+              </div>
+              <button disabled className="mt-4 w-full py-2 bg-forest-500/20 text-forest-300 rounded-lg text-xs font-bold cursor-default">
+                Active
+              </button>
+            </div>
+
+            {/* Pro Tier (Coming Soon) */}
+            <div className="p-4 rounded-xl border border-glass-border bg-elevated/30 flex flex-col justify-between relative opacity-85">
+              <span className="absolute top-3 right-3 text-[9px] font-bold uppercase tracking-wider bg-gold-500/20 text-gold-300 px-2 py-0.5 rounded-full">
+                Coming Soon
+              </span>
+              <div>
+                <span className="text-xs font-bold text-forest-400 uppercase tracking-wider block">Canopy Pro</span>
+                <p className="text-2xl font-display font-bold text-forest-200 mt-1">Coming Soon</p>
+                <ul className="space-y-1.5 mt-3 text-xs text-forest-400">
+                  <li className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-forest-500 flex-shrink-0" /> Everything in Free</li>
+                  <li className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-forest-500 flex-shrink-0" /> Desert & Deep Ocean Biome Themes</li>
+                  <li className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-forest-500 flex-shrink-0" /> Advanced AI Focus Insights</li>
+                  <li className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-forest-500 flex-shrink-0" /> Real-time Co-working Study Rooms</li>
+                  <li className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-forest-500 flex-shrink-0" /> Google Calendar 2-way Sync</li>
+                </ul>
+              </div>
+              <button disabled className="mt-4 w-full py-2 bg-elevated/50 text-forest-500 border border-glass-border rounded-lg text-xs font-bold cursor-not-allowed">
+                Coming Soon
+              </button>
+            </div>
+
+            {/* Team Tier (Coming Soon) */}
+            <div className="p-4 rounded-xl border border-glass-border bg-elevated/30 flex flex-col justify-between relative opacity-85">
+              <span className="absolute top-3 right-3 text-[9px] font-bold uppercase tracking-wider bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded-full">
+                Coming Soon
+              </span>
+              <div>
+                <span className="text-xs font-bold text-forest-400 uppercase tracking-wider block">Biome Teams</span>
+                <p className="text-2xl font-display font-bold text-forest-200 mt-1">Coming Soon</p>
+                <ul className="space-y-1.5 mt-3 text-xs text-forest-400">
+                  <li className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-forest-500 flex-shrink-0" /> Everything in Pro</li>
+                  <li className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-forest-500 flex-shrink-0" /> Shared Collaborative Biome Worlds</li>
+                  <li className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-forest-500 flex-shrink-0" /> Team Leaderboards & Sprints</li>
+                  <li className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-forest-500 flex-shrink-0" /> Admin Analytics & Activity Export</li>
+                </ul>
+              </div>
+              <button disabled className="mt-4 w-full py-2 bg-elevated/50 text-forest-500 border border-glass-border rounded-lg text-xs font-bold cursor-not-allowed">
+                Coming Soon
+              </button>
+            </div>
+          </div>
         </div>
       </SettingsSection>
 
