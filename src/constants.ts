@@ -123,6 +123,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   dailyGoalMinutes: 120,
   ambientVolume: 0.5,
   biomeTheme: 'forest',
+  themeMode: 'dark',
 };
 
 export const DEFAULT_PROFILE: Profile = {

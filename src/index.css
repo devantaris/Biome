@@ -47,6 +47,30 @@
   --color-glass-border-light: rgba(52, 211, 153, 0.12);
 }
 
+/* ─── Light Mode Overrides ─────────────────── */
+.theme-light {
+  --color-deep: #f1f5f3;
+  --color-base: #f8fafc;
+  --color-surface: #ffffff;
+  --color-elevated: #e2e8f0;
+  --color-overlay: #cbd5e1;
+  --color-hover: #e2e8f0;
+
+  --color-forest-100: #0f172a;
+  --color-forest-200: #1e293b;
+  --color-forest-300: #334155;
+  --color-forest-400: #059669;
+  --color-forest-500: #047857;
+  --color-forest-600: #64748b;
+
+  --color-glass: rgba(255, 255, 255, 0.88);
+  --color-glass-light: rgba(255, 255, 255, 0.65);
+  --color-glass-border: rgba(15, 23, 42, 0.08);
+  --color-glass-border-light: rgba(15, 23, 42, 0.16);
+  background-color: #f1f5f3;
+  color: #0f172a;
+}
+
 /* ─── Base Styles ──────────────────────────── */
 @layer base {
   html {

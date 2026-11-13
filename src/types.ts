@@ -179,6 +179,7 @@ export interface AppSettings {
   dailyGoalMinutes: number;
   ambientVolume: number;
   biomeTheme?: BiomeThemeId;
+  themeMode?: 'dark' | 'light';
 }
 
 export interface Profile {

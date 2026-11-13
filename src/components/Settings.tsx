@@ -123,6 +123,18 @@ export default function Settings({ state, actions, onLogout }: SettingsProps) {
               );
             })}
           </div>
+
+          {/* Light / Dark Mode Toggle */}
+          <div className="pt-2 border-t border-glass-border">
+            <Toggle
+              label="Light Mode"
+              description="High-contrast daylight theme for daytime study and focus"
+              enabled={state.settings.themeMode === 'light'}
+              onToggle={() => actions.updateSettings({
+                themeMode: state.settings.themeMode === 'light' ? 'dark' : 'light'
+              })}
+            />
+          </div>
         </div>
       </SettingsSection>
 

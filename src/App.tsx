@@ -96,7 +96,7 @@ export default function App() {
 
   // ─── Main app ─────────────────────────────────────────────────────
   return (
-    <div className="bg-deep min-h-screen flex flex-col">
+    <div className={`bg-deep min-h-screen flex flex-col ${state.settings.themeMode === 'light' ? 'theme-light' : ''}`}>
       {isElectron && <TitleBar />}
 
       <div className="flex flex-1">
