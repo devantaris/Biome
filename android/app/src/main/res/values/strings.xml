@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Biome</string>
+    <string name="title_activity_main">Biome</string>
+    <string name="package_name">com.biome.focus</string>
+    <string name="custom_url_scheme">com.biome.focus</string>
+</resources>
