@@ -1,4 +1,4 @@
-import type { RewardItem, Category, AmbientSoundDef, AppSettings, AppState, Profile, StreakData } from './types';
+import type { RewardItem, Category, AmbientSoundDef, AppSettings, AppState, Profile, StreakData, BiomeThemeDef } from './types';
 
 // ─── Rewards (unlockable forest items) ────────
 export const REWARDS: RewardItem[] = [
@@ -64,6 +64,50 @@ export const XP_PER_MINUTE = 2;
 // ─── Timer Presets ────────────────────────────
 export const TIMER_PRESETS = [10, 15, 25, 30, 45, 60, 90, 120];
 
+// ─── Biome Themes ─────────────────────────────
+export const BIOME_THEMES: BiomeThemeDef[] = [
+  {
+    id: 'forest',
+    name: 'Emerald Forest',
+    icon: '🌲',
+    description: 'Lush greenery, dense moss, and ancient woodlands',
+    gridBg: 'from-emerald-950/40 via-forest-950/30 to-black/40',
+    cellBorder: 'border-forest-800/20',
+    cellEmptyBg: 'bg-forest-900/10',
+    accentColor: '#10b981',
+  },
+  {
+    id: 'ocean',
+    name: 'Abyssal Ocean',
+    icon: '🌊',
+    description: 'Deep bioluminescent waters and coral sanctuary',
+    gridBg: 'from-cyan-950/40 via-blue-950/30 to-black/40',
+    cellBorder: 'border-cyan-800/20',
+    cellEmptyBg: 'bg-cyan-900/10',
+    accentColor: '#06b6d4',
+  },
+  {
+    id: 'desert',
+    name: 'Golden Dunes',
+    icon: '🏜️',
+    description: 'Sun-baked sands, oasis palms, and desert dunes',
+    gridBg: 'from-amber-950/40 via-yellow-950/30 to-black/40',
+    cellBorder: 'border-amber-800/20',
+    cellEmptyBg: 'bg-amber-900/10',
+    accentColor: '#f59e0b',
+  },
+  {
+    id: 'space',
+    name: 'Cosmic Nebula',
+    icon: '🌌',
+    description: 'Stellar dust, glowing nebulae, and celestial expanse',
+    gridBg: 'from-purple-950/40 via-indigo-950/30 to-black/40',
+    cellBorder: 'border-purple-800/20',
+    cellEmptyBg: 'bg-purple-900/10',
+    accentColor: '#8b5cf6',
+  },
+];
+
 // ─── Default Settings ─────────────────────────
 export const DEFAULT_SETTINGS: AppSettings = {
   pomodoroMode: true,
@@ -78,6 +122,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   launchOnStartup: false,
   dailyGoalMinutes: 120,
   ambientVolume: 0.5,
+  biomeTheme: 'forest',
 };
 
 export const DEFAULT_PROFILE: Profile = {

@@ -152,6 +152,19 @@ export interface AmbientSoundDef {
 }
 
 // ─── Settings & Profile ──────────────────────
+export type BiomeThemeId = 'forest' | 'ocean' | 'desert' | 'space';
+
+export interface BiomeThemeDef {
+  id: BiomeThemeId;
+  name: string;
+  icon: string;
+  description: string;
+  gridBg: string;
+  cellBorder: string;
+  cellEmptyBg: string;
+  accentColor: string;
+}
+
 export interface AppSettings {
   pomodoroMode: boolean;
   autoStartBreaks: boolean;
@@ -165,6 +178,7 @@ export interface AppSettings {
   launchOnStartup: boolean;
   dailyGoalMinutes: number;
   ambientVolume: number;
+  biomeTheme?: BiomeThemeId;
 }
 
 export interface Profile {

@@ -4,9 +4,9 @@
 // ============================================
 import React, { useMemo, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Package, X, Maximize2, Info, ZoomIn, ZoomOut, RotateCcw, Move, RotateCcw as ReturnIcon, Trash2, Share2, Check, Copy } from 'lucide-react';
+import { Package, X, Maximize2, Info, ZoomIn, ZoomOut, RotateCcw, Move, RotateCcw as ReturnIcon, Trash2, Share2, Check, Copy, ChevronDown } from 'lucide-react';
 import type { AppState, AppActions, ForestItem, InventoryItem } from '../types';
-import { RARITY_COLORS, RARITY_BG } from '../constants';
+import { RARITY_COLORS, RARITY_BG, BIOME_THEMES } from '../constants';
 
 interface ForestViewProps {
   state: AppState;
@@ -25,6 +25,13 @@ export default function ForestView({ state, actions }: ForestViewProps) {
   const [showInventoryHelp, setShowInventoryHelp] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [copiedShare, setCopiedShare] = useState(false);
+  const [showThemeMenu, setShowThemeMenu] = useState(false);
+
+  const currentThemeId = state.settings.biomeTheme || 'forest';
+  const currentTheme = useMemo(() =>
+    BIOME_THEMES.find(t => t.id === currentThemeId) || BIOME_THEMES[0],
+    [currentThemeId]
+  );
 
   const gridSize = state.gridSize ?? 10;
   const totalTiles = gridSize * gridSize;
@@ -225,6 +232,51 @@ export default function ForestView({ state, actions }: ForestViewProps) {
               <Share2 className="w-3.5 h-3.5 text-forest-400" />
               <span className="hidden sm:inline">Share</span>
             </button>
+            <div className="w-[1px] h-4 bg-glass-border mx-1" />
+            <div className="relative">
+              <button
+                onClick={() => setShowThemeMenu(v => !v)}
+                className="px-2.5 py-1 text-xs font-bold text-forest-300 hover:text-forest-100 hover:bg-forest-500/20 rounded-lg transition-colors flex items-center gap-1.5"
+                title="Change Biome Theme"
+              >
+                <span>{currentTheme.icon}</span>
+                <span className="hidden md:inline">{currentTheme.name}</span>
+                <ChevronDown className={`w-3 h-3 text-forest-500 transition-transform ${showThemeMenu ? 'rotate-180' : ''}`} />
+              </button>
+
+              <AnimatePresence>
+                {showThemeMenu && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95, y: 5 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, y: 5 }}
+                    className="absolute right-0 top-full mt-2 w-56 glass-card p-2 shadow-2xl border border-glass-border-light z-50 space-y-1"
+                  >
+                    <p className="text-[10px] font-bold text-forest-500 uppercase px-2 py-1 tracking-wider">Biome Theme</p>
+                    {BIOME_THEMES.map(theme => (
+                      <button
+                        key={theme.id}
+                        onClick={() => {
+                          actions.updateSettings({ biomeTheme: theme.id });
+                          setShowThemeMenu(false);
+                        }}
+                        className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-medium text-left transition-all ${
+                          currentTheme.id === theme.id
+                            ? 'bg-forest-500/20 text-forest-100 border border-forest-500/30'
+                            : 'text-forest-400 hover:text-forest-200 hover:bg-elevated'
+                        }`}
+                      >
+                        <span className="text-lg">{theme.icon}</span>
+                        <div>
+                          <p className="font-bold leading-tight">{theme.name}</p>
+                          <p className="text-[10px] text-forest-500 line-clamp-1">{theme.description}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
 
           {(placingItem || movingItem) && (
@@ -307,7 +359,7 @@ export default function ForestView({ state, actions }: ForestViewProps) {
       </AnimatePresence>
 
       {/* ─── Forest World Grid ─── */}
-      <div className="glass-card relative flex-1 min-h-[300px] flex flex-col min-h-0 min-w-0">
+      <div className={`glass-card relative flex-1 min-h-[300px] flex flex-col min-h-0 min-w-0 bg-gradient-to-b ${currentTheme.gridBg}`}>
         {state.forest.length === 0 && state.inventory.length === 0 ? (
           <div className="flex flex-1 items-center justify-center py-24">
             <div className="text-center">
@@ -357,7 +409,7 @@ export default function ForestView({ state, actions }: ForestViewProps) {
                 let cellBg = '';
                 if (isPlaceable && isHoveredArea) cellBg = placingItem ? 'bg-forest-500/25' : 'bg-blue-500/25';
                 else if (isPlaceable) cellBg = placingItem ? 'bg-forest-500/10' : 'bg-blue-500/10';
-                else cellBg = 'bg-forest-900/10';
+                else cellBg = currentTheme.cellEmptyBg;
 
                 // Only render the item icon once if it's 2x2 (on its top-left cell)
                 const isItemRoot = item && item.x === x && item.y === y;
@@ -370,7 +422,7 @@ export default function ForestView({ state, actions }: ForestViewProps) {
                     onMouseLeave={() => setHoveredTile(null)}
                     className={`
                       aspect-square flex items-center justify-center relative group
-                      border border-forest-800/8 transition-all rounded-md m-[1px]
+                      border ${currentTheme.cellBorder} transition-all rounded-md m-[1px]
                       ${cellBg}
                       ${isPlaceable ? 'cursor-pointer' : item && item.type !== 'dead' && !activeItem ? 'cursor-grab hover:bg-forest-700/30' : 'cursor-default'}
                       ${isPlaceable && isHoveredArea ? 'z-10 shadow-lg shadow-forest-500/20' : ''}

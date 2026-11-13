@@ -5,9 +5,10 @@ import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import {
   Timer, Bell, Monitor, Database, User, Download, Upload,
-  RotateCcw, Info, Keyboard, Volume2, Sparkles, Check, Shield
+  RotateCcw, Info, Keyboard, Volume2, Sparkles, Check, Shield, Palette
 } from 'lucide-react';
 import type { AppState, AppActions } from '../types';
+import { BIOME_THEMES } from '../constants';
 
 interface SettingsProps {
   state: AppState;
@@ -89,6 +90,38 @@ export default function Settings({ state, actions, onLogout }: SettingsProps) {
                 </button>
               ))}
             </div>
+          </div>
+        </div>
+      </SettingsSection>
+
+      {/* Biome Themes */}
+      <SettingsSection icon={<Palette />} title="Biome & Appearance">
+        <div className="space-y-3">
+          <label className="text-[10px] font-bold text-forest-500 uppercase block">Active Biome World Theme</label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            {BIOME_THEMES.map(theme => {
+              const isActive = (state.settings.biomeTheme || 'forest') === theme.id;
+              return (
+                <button
+                  key={theme.id}
+                  onClick={() => actions.updateSettings({ biomeTheme: theme.id })}
+                  className={`flex items-center gap-3 p-3 rounded-xl border text-left transition-all ${
+                    isActive
+                      ? 'bg-forest-500/20 border-forest-400 text-forest-100 shadow-md shadow-forest-500/10'
+                      : 'bg-elevated/40 border-glass-border text-forest-300 hover:border-glass-border-light'
+                  }`}
+                >
+                  <span className="text-2xl">{theme.icon}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <p className="font-bold text-xs">{theme.name}</p>
+                      {isActive && <span className="text-[9px] font-bold text-forest-300 uppercase bg-forest-500/30 px-1.5 py-0.5 rounded">Active</span>}
+                    </div>
+                    <p className="text-[10px] text-forest-500 line-clamp-1 mt-0.5">{theme.description}</p>
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </div>
       </SettingsSection>
