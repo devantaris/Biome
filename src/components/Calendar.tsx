@@ -349,8 +349,16 @@ export default function CalendarView({ state }: CalendarProps) {
                                 {new Date(s.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                               </span>
                               <span className="text-forest-500 ml-1.5">({s.duration} min)</span>
+                              {s.tag && (
+                                <span className="ml-1.5 px-1.5 py-0.5 rounded bg-forest-900/60 border border-forest-700/50 text-[10px] text-forest-300 font-semibold">
+                                  🏷️ {s.tag}
+                                </span>
+                              )}
                               {sessionTask && (
                                 <p className="text-[11px] text-forest-400 mt-0.5">Task: {sessionTask.title}</p>
+                              )}
+                              {s.notes && (
+                                <p className="text-[10px] text-forest-500 italic mt-0.5">"{s.notes}"</p>
                               )}
                             </div>
                           </div>

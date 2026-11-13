@@ -3,10 +3,10 @@
 // ============================================
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Play, Pause, Square, Coffee, SkipForward, Volume2, VolumeX, AlertTriangle } from 'lucide-react';
+import { Play, Pause, Square, Coffee, SkipForward, Volume2, VolumeX, AlertTriangle, Tag, Edit3 } from 'lucide-react';
 import type { AppState, RewardItem } from '../types';
 import type { TimerState, TimerActions } from '../hooks/useTimer';
-import { REWARDS, TIMER_PRESETS, AMBIENT_SOUNDS, RARITY_COLORS, RARITY_BG } from '../constants';
+import { REWARDS, TIMER_PRESETS, AMBIENT_SOUNDS, DEFAULT_SESSION_TAGS, RARITY_COLORS, RARITY_BG } from '../constants';
 
 interface TimerProps {
   state: AppState;
@@ -99,6 +99,18 @@ export default function TimerView({ state, timer, timerActions, showReward, clea
           {timer.selectedTask && timer.isActive && (
             <p className="text-[10px] text-forest-500 mt-1 truncate max-w-full">Working on: {timer.selectedTask.title}</p>
           )}
+          {timer.isActive && (
+            <div className="mt-1.5 flex flex-col items-center">
+              <span className="text-[10px] font-bold text-forest-300 bg-forest-900/60 border border-forest-700/50 px-2 py-0.5 rounded-full">
+                🏷️ {timer.selectedTag}
+              </span>
+              {timer.sessionNotes && (
+                <p className="text-[10px] text-forest-400 italic mt-0.5 max-w-[200px] truncate">
+                  "{timer.sessionNotes}"
+                </p>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -160,6 +172,44 @@ export default function TimerView({ state, timer, timerActions, showReward, clea
                   </button>
                 ))}
               </div>
+            </div>
+          </div>
+
+          {/* Focus Tag & Session Notes */}
+          <div className="glass-card p-4 space-y-3">
+            <div>
+              <label className="text-[10px] font-bold text-forest-500 uppercase mb-2 block tracking-wider flex items-center gap-1.5">
+                <Tag className="w-3 h-3" /> Focus Tag
+              </label>
+              <div className="flex flex-wrap gap-1.5">
+                {DEFAULT_SESSION_TAGS.map(tag => (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => timerActions.setTag(tag)}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
+                      timer.selectedTag === tag
+                        ? 'bg-forest-600 text-white shadow-sm'
+                        : 'bg-elevated text-forest-400 hover:text-forest-200'
+                    }`}
+                  >
+                    {tag}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="text-[10px] font-bold text-forest-500 uppercase mb-1.5 block tracking-wider flex items-center gap-1.5">
+                <Edit3 className="w-3 h-3" /> Session Intention / Notes (Optional)
+              </label>
+              <input
+                type="text"
+                value={timer.sessionNotes}
+                onChange={(e) => timerActions.setNotes(e.target.value)}
+                placeholder="e.g. Finish landing page, write tests, read chapter 4..."
+                className="w-full bg-elevated border border-glass-border rounded-xl px-3 py-2 text-xs font-medium text-forest-200 placeholder-forest-600 focus:ring-1 focus:ring-forest-500 focus:border-forest-500 outline-none"
+              />
             </div>
           </div>
 

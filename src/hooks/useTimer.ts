@@ -18,6 +18,8 @@ export interface TimerState {
   selectedItem: RewardItem;
   selectedTask: Task | null;
   selectedSound: string;
+  selectedTag: string;
+  sessionNotes: string;
   progress: number;
   pomodoroCount: number; // sessions today
   sessionStartTime: number | null;
@@ -28,6 +30,8 @@ export interface TimerActions {
   setItem: (item: RewardItem) => void;
   setTask: (task: Task | null) => void;
   setSound: (soundId: string) => void;
+  setTag: (tag: string) => void;
+  setNotes: (notes: string) => void;
   start: () => void;
   pause: () => void;
   resume: () => void;
@@ -51,6 +55,8 @@ export function useTimer(state: AppState, actions: AppActions): { timer: TimerSt
   const [selectedItem, setSelectedItem] = useState<RewardItem>(() => getBestRewardForDuration(25));
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [selectedSound, setSelectedSound] = useState('silence');
+  const [selectedTag, setSelectedTag] = useState('Deep Work');
+  const [sessionNotes, setSessionNotes] = useState('');
   const [breakDuration, setBreakDuration] = useState(5);
   const [sessionStartTime, setSessionStartTime] = useState<number | null>(null);
   const [showReward, setShowReward] = useState<RewardItem | null>(null);
@@ -70,6 +76,10 @@ export function useTimer(state: AppState, actions: AppActions): { timer: TimerSt
   selectedDurationRef.current = selectedDuration;
   const selectedSoundRef = useRef(selectedSound);
   selectedSoundRef.current = selectedSound;
+  const selectedTagRef = useRef(selectedTag);
+  selectedTagRef.current = selectedTag;
+  const sessionNotesRef = useRef(sessionNotes);
+  sessionNotesRef.current = sessionNotes;
   const sessionStartTimeRef = useRef(sessionStartTime);
   sessionStartTimeRef.current = sessionStartTime;
   const pomodoroCountRef = useRef(pomodoroCount);
@@ -145,6 +155,8 @@ export function useTimer(state: AppState, actions: AppActions): { timer: TimerSt
       taskId: currentTask?.id,
       rewardId: currentItem.id,
       ambientSound: currentSound,
+      tag: selectedTagRef.current || undefined,
+      notes: sessionNotesRef.current?.trim() || undefined,
     };
     currentActions.addSession(session);
 
@@ -379,6 +391,8 @@ export function useTimer(state: AppState, actions: AppActions): { timer: TimerSt
     selectedItem,
     selectedTask,
     selectedSound,
+    selectedTag,
+    sessionNotes,
     progress,
     pomodoroCount,
     sessionStartTime,
@@ -389,6 +403,8 @@ export function useTimer(state: AppState, actions: AppActions): { timer: TimerSt
     setItem: setSelectedItem,
     setTask: setSelectedTask,
     setSound: setSelectedSound,
+    setTag: setSelectedTag,
+    setNotes: setSessionNotes,
     start,
     pause,
     resume,

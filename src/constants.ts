@@ -31,6 +31,17 @@ export const REWARDS: RewardItem[] = [
 ];
 
 // ─── Categories ───────────────────────────────
+export const DEFAULT_SESSION_TAGS = [
+  'Deep Work',
+  'Coding',
+  'Writing',
+  'Reading',
+  'Research',
+  'Design',
+  'Admin',
+  'Review',
+];
+
 export const CATEGORIES: Category[] = [
   { id: 'work',     name: 'Work',     color: '#3b82f6', icon: '💼' },
   { id: 'study',    name: 'Study',    color: '#8b5cf6', icon: '📚' },

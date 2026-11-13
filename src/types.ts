@@ -92,6 +92,8 @@ export interface FocusSession {
   taskId?: string;
   rewardId?: string;
   ambientSound?: string;
+  tag?: string;
+  notes?: string;
 }
 
 // ─── Calendar ────────────────────────────────
