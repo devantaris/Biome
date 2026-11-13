@@ -28,6 +28,7 @@ import StudyRooms from './components/StudyRooms';
 import AuthGate from './components/AuthGate';
 import Onboarding from './components/Onboarding';
 import MobileNavBar from './components/MobileNavBar';
+import ErrorBoundary from './components/ErrorBoundary';
 
 
 export default function App() {
@@ -131,6 +132,7 @@ export default function App() {
 
         {/* Main content area */}
         <main className="flex-1 p-4 md:p-8 pb-24 md:pb-8 md:overflow-y-auto md:h-screen scroll-smooth">
+          <ErrorBoundary label="the main view">
           <AnimatePresence mode="wait">
             {view === 'dashboard' && (
               <Dashboard key="dashboard" state={state} actions={actions} setView={setView} timerActions={timerActions} />
@@ -163,6 +165,7 @@ export default function App() {
               <Settings key="settings" state={state} actions={actions} onLogout={handleLogout} />
             )}
           </AnimatePresence>
+          </ErrorBoundary>
         </main>
       </div>
 
