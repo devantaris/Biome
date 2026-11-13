@@ -13,6 +13,8 @@ interface ElectronAPI {
   showNotification: (title: string, body: string) => void;
   getVersion: () => Promise<string>;
   isElectron: () => boolean;
+  setLaunchOnStartup: (value: boolean) => Promise<boolean>;
+  getLaunchOnStartup: () => Promise<boolean>;
 
   // Floating widget
   setWidgetVisible: (visible: boolean) => Promise<void>;

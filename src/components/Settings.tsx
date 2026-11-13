@@ -238,6 +238,20 @@ export default function Settings({ state, actions, onLogout }: SettingsProps) {
             enabled={state.settings.minimizeToTray}
             onToggle={() => actions.updateSettings({ minimizeToTray: !state.settings.minimizeToTray })}
           />
+          <Toggle
+            label="Launch on Startup"
+            description="Automatically open Biome when you log in"
+            enabled={state.settings.launchOnStartup}
+            onToggle={async () => {
+              const next = !state.settings.launchOnStartup;
+              actions.updateSettings({ launchOnStartup: next });
+              if (window.electronAPI?.setLaunchOnStartup) {
+                try {
+                  await window.electronAPI.setLaunchOnStartup(next);
+                } catch { /* non-Electron env — setting saved to prefs only */ }
+              }
+            }}
+          />
         </div>
       </SettingsSection>
 

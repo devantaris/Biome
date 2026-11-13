@@ -16,6 +16,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   showNotification: (title, body) => ipcRenderer.invoke('app:show-notification', { title, body }),
   getVersion: () => ipcRenderer.invoke('app:get-version'),
   isElectron: () => ipcRenderer.invoke('app:is-electron'),
+  setLaunchOnStartup: (value) => ipcRenderer.invoke('app:set-launch-on-startup', value),
+  getLaunchOnStartup: () => ipcRenderer.invoke('app:get-launch-on-startup'),
 
   // ─── Widget ───────────────────────────────
   setWidgetVisible: (visible) => ipcRenderer.invoke('widget:set-visible', visible),

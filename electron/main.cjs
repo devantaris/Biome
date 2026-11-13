@@ -241,6 +241,17 @@ ipcMain.handle('window:is-maximized', () => mainWindow?.isMaximized() ?? false);
 // ─── IPC: App features ────────────────────────
 ipcMain.handle('app:set-always-on-top', (_e, value) => mainWindow?.setAlwaysOnTop(value));
 
+/** Launch at login — uses Electron's native setLoginItemSettings */
+ipcMain.handle('app:set-launch-on-startup', (_e, value) => {
+  app.setLoginItemSettings({ openAtLogin: Boolean(value) });
+  return app.getLoginItemSettings().openAtLogin;
+});
+
+/** Query current launch-on-startup state */
+ipcMain.handle('app:get-launch-on-startup', () => {
+  return app.getLoginItemSettings().openAtLogin;
+});
+
 ipcMain.handle('app:show-notification', (_e, { title, body }) => {
   if (Notification.isSupported()) {
     const n = new Notification({ title, body, silent: false });

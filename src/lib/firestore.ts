@@ -13,13 +13,25 @@ import { INITIAL_STATE } from '../constants';
 
 // ─── User data ────────────────────────────────
 
-/** Write the full app state to Firestore for this user */
+/** Sessions older than this are excluded from Firestore writes (kept in localStorage only) */
+const FIRESTORE_SESSION_MAX_AGE_MS = 90 * 24 * 60 * 60 * 1000; // 90 days
+
+/** Write the full app state to Firestore for this user.
+ *  Sessions older than 90 days are pruned from the cloud payload to cap document size.
+ *  Full history is always preserved in localStorage.
+ */
 export async function pushStateToFirestore(uid: string, state: AppState): Promise<void> {
   try {
     const ref = doc(db, 'users', uid, 'data', 'appState');
-    // Omit non-serializable or sensitive fields before saving
+    const cutoff = Date.now() - FIRESTORE_SESSION_MAX_AGE_MS;
+    // Only recent sessions go to Firestore — full history stays in localStorage
     const { ...serializable } = state;
-    await setDoc(ref, { ...serializable, updatedAt: serverTimestamp() }, { merge: true });
+    const firestorePayload = {
+      ...serializable,
+      sessions: state.sessions.filter(s => s.startTime > cutoff),
+      updatedAt: serverTimestamp(),
+    };
+    await setDoc(ref, firestorePayload, { merge: true });
   } catch (err) {
     console.warn('[Sync] Failed to push state:', err);
   }
