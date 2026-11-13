@@ -61,6 +61,9 @@ export const AMBIENT_SOUNDS: AmbientSoundDef[] = [
   { id: 'waves',     name: 'Ocean Waves',   icon: '🌊', description: 'Rhythmic ocean waves' },
   { id: 'fire',      name: 'Fireplace',     icon: '🔥', description: 'Crackling fireplace' },
   { id: 'wind',      name: 'Wind',          icon: '💨', description: 'Gentle breeze through pines' },
+  { id: 'cafe',      name: 'Café Buzz',     icon: '☕', description: 'Warm coffee shop ambiance' },
+  { id: 'lofi',      name: 'Lo-Fi Chill',   icon: '🎧', description: 'Mellow chords and vinyl warmth' },
+  { id: 'library',   name: 'Quiet Library', icon: '📖', description: 'Calm study room resonance' },
   { id: 'brown',     name: 'Brown Noise',   icon: '🟤', description: 'Deep, warm noise' },
   { id: 'white',     name: 'White Noise',   icon: '⚪', description: 'Classic white noise' },
 ];

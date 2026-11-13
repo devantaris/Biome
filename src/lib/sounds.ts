@@ -3,7 +3,7 @@
 // (Web Audio API — no audio files needed)
 // ============================================
 
-type SoundType = 'rain' | 'forest' | 'waves' | 'fire' | 'wind' | 'brown' | 'white' | 'thunder' | 'silence';
+type SoundType = 'rain' | 'forest' | 'waves' | 'fire' | 'wind' | 'brown' | 'white' | 'thunder' | 'cafe' | 'lofi' | 'library' | 'silence';
 
 class AmbientSoundEngine {
   private ctx: AudioContext | null = null;
@@ -57,6 +57,9 @@ class AmbientSoundEngine {
       case 'fire': this.createFire(ctx); break;
       case 'wind': this.createWind(ctx); break;
       case 'thunder': this.createThunder(ctx); break;
+      case 'cafe': this.createCafe(ctx); break;
+      case 'lofi': this.createLofi(ctx); break;
+      case 'library': this.createLibrary(ctx); break;
     }
   }
 
@@ -342,6 +345,142 @@ class AmbientSoundEngine {
     };
 
     setTimeout(scheduleThunder, 2500);
+  }
+
+  private createCafe(ctx: AudioContext) {
+    // Warm background murmur with multi-frequency filter
+    const noise = this.createLoopingNoise(ctx);
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.value = 520;
+    filter.Q.value = 0.8;
+
+    const gain = ctx.createGain();
+    gain.gain.value = 0.16;
+
+    noise.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.masterGain!);
+    this.activeNodes.push(filter, gain);
+
+    // Periodic gentle cup clinks
+    const scheduleClink = () => {
+      if (!this.isPlaying || this.activeType !== 'cafe') return;
+      const now = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const oscGain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(2400 + Math.random() * 800, now);
+
+      oscGain.gain.setValueAtTime(0, now);
+      oscGain.gain.linearRampToValueAtTime(0.04, now + 0.01);
+      oscGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.12);
+
+      osc.connect(oscGain);
+      oscGain.connect(this.masterGain!);
+      osc.start(now);
+      osc.stop(now + 0.15);
+
+      const nextDelay = 4000 + Math.random() * 9000;
+      setTimeout(scheduleClink, nextDelay);
+    };
+
+    setTimeout(scheduleClink, 3000);
+  }
+
+  private createLofi(ctx: AudioContext) {
+    // 1. Vinyl crackle / subtle background warmth
+    const noise = this.createLoopingNoise(ctx);
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.value = 1800;
+    filter.Q.value = 3.0;
+    const vinylGain = ctx.createGain();
+    vinylGain.gain.value = 0.05;
+
+    noise.connect(filter);
+    filter.connect(vinylGain);
+    vinylGain.connect(this.masterGain!);
+    this.activeNodes.push(filter, vinylGain);
+
+    // 2. Mellow chillout triad chord pad (Eb3 - G3 - Bb3)
+    const chordFrequencies = [155.56, 196.00, 233.08];
+    const padGain = ctx.createGain();
+    padGain.gain.value = 0.07;
+    padGain.connect(this.masterGain!);
+    this.activeNodes.push(padGain);
+
+    chordFrequencies.forEach(freq => {
+      const osc = ctx.createOscillator();
+      osc.type = 'triangle';
+      osc.frequency.value = freq;
+
+      const lp = ctx.createBiquadFilter();
+      lp.type = 'lowpass';
+      lp.frequency.value = 420;
+
+      // Slow gentle vibrato
+      const vibrato = ctx.createOscillator();
+      vibrato.frequency.value = 0.25;
+      const vibratoGain = ctx.createGain();
+      vibratoGain.gain.value = 1.2;
+      vibrato.connect(vibratoGain);
+      vibratoGain.connect(osc.frequency);
+      vibrato.start();
+
+      osc.connect(lp);
+      lp.connect(padGain);
+      osc.start();
+
+      this.activeNodes.push(osc, lp, vibrato, vibratoGain);
+    });
+  }
+
+  private createLibrary(ctx: AudioContext) {
+    // Calm room tone resonance
+    const noise = this.createLoopingNoise(ctx);
+    const lp = ctx.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.value = 280;
+    lp.Q.value = 0.6;
+
+    const gain = ctx.createGain();
+    gain.gain.value = 0.22;
+
+    noise.connect(lp);
+    lp.connect(gain);
+    gain.connect(this.masterGain!);
+    this.activeNodes.push(lp, gain);
+
+    // Gentle occasional page swoosh
+    const schedulePageTurn = () => {
+      if (!this.isPlaying || this.activeType !== 'library') return;
+      const now = ctx.currentTime;
+      const swoosh = ctx.createBufferSource();
+      swoosh.buffer = this.createNoiseBuffer(ctx, 1.2);
+
+      const bp = ctx.createBiquadFilter();
+      bp.type = 'bandpass';
+      bp.frequency.setValueAtTime(800, now);
+      bp.frequency.linearRampToValueAtTime(450, now + 0.8);
+      bp.Q.value = 1.8;
+
+      const swooshGain = ctx.createGain();
+      swooshGain.gain.setValueAtTime(0, now);
+      swooshGain.gain.linearRampToValueAtTime(0.06, now + 0.2);
+      swooshGain.gain.exponentialRampToValueAtTime(0.001, now + 0.9);
+
+      swoosh.connect(bp);
+      bp.connect(swooshGain);
+      swooshGain.connect(this.masterGain!);
+      swoosh.start(now);
+      swoosh.stop(now + 1.0);
+
+      const nextDelay = 12000 + Math.random() * 16000;
+      setTimeout(schedulePageTurn, nextDelay);
+    };
+
+    setTimeout(schedulePageTurn, 6000);
   }
 
   // ─── Notification Sounds ───────────────────
