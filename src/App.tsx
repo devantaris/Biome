@@ -26,6 +26,7 @@ import Settings from './components/Settings';
 import CalendarView from './components/Calendar';
 import StudyRooms from './components/StudyRooms';
 import AuthGate from './components/AuthGate';
+import Onboarding from './components/Onboarding';
 import MobileNavBar from './components/MobileNavBar';
 
 
@@ -34,6 +35,9 @@ export default function App() {
   const { timer, timerActions, showReward, clearReward } = useTimer(state, actions);
   const { user, loading: authLoading, error: authError, signInWithGoogle, logout } = useAuth();
   const [view, setView] = useState<ViewType>('dashboard');
+  const [hasOnboarded, setHasOnboarded] = useState<boolean>(() => {
+    return localStorage.getItem('biome_onboarded') === 'true' || state.sessions.length > 0;
+  });
   const isElectron = !!window.electronAPI;
 
   // ─── Cloud sync (loads from Firestore on login, pushes changes) ──
@@ -99,6 +103,19 @@ export default function App() {
   // ─── Not logged in → Auth gate ────────────────────────────────────
   if (!user) {
     return <AuthGate onSignIn={signInWithGoogle} loading={authLoading} error={authError} />;
+  }
+
+  // ─── First-time onboarding walkthrough ────────────────────────────
+  if (!hasOnboarded) {
+    return (
+      <Onboarding
+        actions={actions}
+        onComplete={() => {
+          localStorage.setItem('biome_onboarded', 'true');
+          setHasOnboarded(true);
+        }}
+      />
+    );
   }
 
   // ─── Main app ─────────────────────────────────────────────────────

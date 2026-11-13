@@ -24,6 +24,7 @@ export default function Onboarding({ actions, onComplete }: OnboardingProps) {
     } else {
       actions.updateProfile({ avatar, joinDate: Date.now() });
     }
+    localStorage.setItem('biome_onboarded', 'true');
     onComplete();
   };
 
