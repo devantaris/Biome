@@ -53,6 +53,12 @@ export interface InventoryItem {
 }
 
 // ─── Tasks ───────────────────────────────────
+export interface Subtask {
+  id: string;
+  title: string;
+  completed: boolean;
+}
+
 export interface Task {
   id: string;
   title: string;
@@ -65,6 +71,7 @@ export interface Task {
   estimatedMinutes?: number;
   actualMinutes: number;
   repeatDaily?: boolean;
+  subtasks?: Subtask[];
 }
 
 export interface Category {
@@ -199,6 +206,9 @@ export interface AppActions {
   deleteTask: (id: string) => void;
   rescheduleTask: (id: string, newDueDate: string) => void;
   updateTaskMinutes: (id: string, minutes: number) => void;
+  addSubtask: (taskId: string, title: string) => void;
+  toggleSubtask: (taskId: string, subtaskId: string) => void;
+  deleteSubtask: (taskId: string, subtaskId: string) => void;
 
   // Sessions
   addSession: (session: FocusSession) => void;

@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import type {
   AppState, AppActions, ForestItem, InventoryItem,
-  FocusSession, Priority, Profile, AppSettings, Task
+  FocusSession, Priority, Profile, AppSettings, Task, Subtask
 } from '../types';
 import { INITIAL_STATE, XP_PER_LEVEL, XP_PER_MINUTE, GRID_EXPANSION_FACTOR } from '../constants';
 import { checkNewAchievements } from '../lib/achievements';
@@ -265,6 +265,48 @@ export function useAppState(): { state: AppState; actions: AppActions; newAchiev
     }));
   }, []);
 
+  const addSubtask = useCallback((taskId: string, title: string) => {
+    if (!title.trim()) return;
+    const newSubtask: Subtask = {
+      id: crypto.randomUUID?.() || Math.random().toString(36).substr(2, 9),
+      title: title.trim(),
+      completed: false,
+    };
+    setState(prev => ({
+      ...prev,
+      tasks: prev.tasks.map(t =>
+        t.id === taskId
+          ? { ...t, subtasks: [...(t.subtasks || []), newSubtask] }
+          : t
+      ),
+    }));
+  }, []);
+
+  const toggleSubtask = useCallback((taskId: string, subtaskId: string) => {
+    setState(prev => ({
+      ...prev,
+      tasks: prev.tasks.map(t => {
+        if (t.id !== taskId) return t;
+        const currentSubtasks = t.subtasks || [];
+        const nextSubtasks = currentSubtasks.map(st =>
+          st.id === subtaskId ? { ...st, completed: !st.completed } : st
+        );
+        return { ...t, subtasks: nextSubtasks };
+      }),
+    }));
+  }, []);
+
+  const deleteSubtask = useCallback((taskId: string, subtaskId: string) => {
+    setState(prev => ({
+      ...prev,
+      tasks: prev.tasks.map(t =>
+        t.id === taskId
+          ? { ...t, subtasks: (t.subtasks || []).filter(st => st.id !== subtaskId) }
+          : t
+      ),
+    }));
+  }, []);
+
   const addSession = useCallback((session: FocusSession) => {
     setState(prev => {
       const newSessions = [...prev.sessions, session];
@@ -376,6 +418,9 @@ export function useAppState(): { state: AppState; actions: AppActions; newAchiev
     deleteTask,
     rescheduleTask,
     updateTaskMinutes,
+    addSubtask,
+    toggleSubtask,
+    deleteSubtask,
     addSession,
     unlockAchievement,
     updateStreak,
@@ -388,7 +433,7 @@ export function useAppState(): { state: AppState; actions: AppActions; newAchiev
     importData,
   }), [
     addForestItem, addToInventory, removeInventoryItem, placeInventoryItem, moveForestItem, recycleForestItem,
-    addTask, toggleTask, deleteTask, rescheduleTask, updateTaskMinutes, addSession,
+    addTask, toggleTask, deleteTask, rescheduleTask, updateTaskMinutes, addSubtask, toggleSubtask, deleteSubtask, addSession,
     unlockAchievement, updateStreak, updateProfile, updateSettings,
     addXp, completeChallenge, resetAll, exportData, importData,
   ]);

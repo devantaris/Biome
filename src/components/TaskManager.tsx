@@ -7,7 +7,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import {
   Plus, Trash2, CheckCircle2, Circle,
   ChevronLeft, ChevronRight, Calendar,
-  ChevronDown, Repeat, CalendarPlus
+  ChevronDown, Repeat, CalendarPlus,
+  ListTodo, CheckSquare, Square, CornerDownRight
 } from 'lucide-react';
 import type { AppState, AppActions, Priority, Task } from '../types';
 import { CATEGORIES } from '../constants';
@@ -303,6 +304,9 @@ export default function TaskManager({ state, actions }: TaskManagerProps) {
                   onToggle={() => !isPast && actions.toggleTask(task.id)}
                   onDelete={() => !isPast && actions.deleteTask(task.id)}
                   onReschedule={() => !isPast && actions.rescheduleTask(task.id, addDays(task.dueDate, 1))}
+                  onAddSubtask={(title) => !isPast && actions.addSubtask(task.id, title)}
+                  onToggleSubtask={(subtaskId) => !isPast && actions.toggleSubtask(task.id, subtaskId)}
+                  onDeleteSubtask={(subtaskId) => !isPast && actions.deleteSubtask(task.id, subtaskId)}
                   readonly={isPast}
                 />
               ))}
@@ -337,6 +341,9 @@ export default function TaskManager({ state, actions }: TaskManagerProps) {
                             onToggle={() => !isPast && actions.toggleTask(task.id)}
                             onDelete={() => !isPast && actions.deleteTask(task.id)}
                             onReschedule={() => !isPast && actions.rescheduleTask(task.id, addDays(task.dueDate, 1))}
+                            onAddSubtask={(title) => !isPast && actions.addSubtask(task.id, title)}
+                            onToggleSubtask={(subtaskId) => !isPast && actions.toggleSubtask(task.id, subtaskId)}
+                            onDeleteSubtask={(subtaskId) => !isPast && actions.deleteSubtask(task.id, subtaskId)}
                             readonly={isPast}
                           />
                         ))}
@@ -354,6 +361,9 @@ export default function TaskManager({ state, actions }: TaskManagerProps) {
                 onToggle={() => !isPast && actions.toggleTask(task.id)}
                 onDelete={() => !isPast && actions.deleteTask(task.id)}
                 onReschedule={() => !isPast && actions.rescheduleTask(task.id, addDays(task.dueDate, 1))}
+                onAddSubtask={(title) => !isPast && actions.addSubtask(task.id, title)}
+                onToggleSubtask={(subtaskId) => !isPast && actions.toggleSubtask(task.id, subtaskId)}
+                onDeleteSubtask={(subtaskId) => !isPast && actions.deleteSubtask(task.id, subtaskId)}
                 readonly={isPast}
               />
             ))
@@ -379,88 +389,213 @@ export default function TaskManager({ state, actions }: TaskManagerProps) {
   );
 }
 
-function TaskRow({ task, onToggle, onDelete, onReschedule, readonly }: {
+function TaskRow({
+  task,
+  onToggle,
+  onDelete,
+  onReschedule,
+  onAddSubtask,
+  onToggleSubtask,
+  onDeleteSubtask,
+  readonly,
+}: {
   task: Task;
   onToggle: () => void;
   onDelete: () => void;
   onReschedule?: () => void;
+  onAddSubtask: (title: string) => void;
+  onToggleSubtask: (subtaskId: string) => void;
+  onDeleteSubtask: (subtaskId: string) => void;
   readonly: boolean;
 }) {
+  const [expanded, setExpanded] = useState(false);
+  const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
   const cat = CATEGORIES.find(c => c.id === task.category);
+
+  const subtasks = task.subtasks || [];
+  const completedSubtasksCount = subtasks.filter(st => st.completed).length;
+  const totalSubtasks = subtasks.length;
+  const subtasksPct = totalSubtasks > 0 ? Math.round((completedSubtasksCount / totalSubtasks) * 100) : 0;
+
+  const handleAddSubtask = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newSubtaskTitle.trim() || readonly) return;
+    onAddSubtask(newSubtaskTitle.trim());
+    setNewSubtaskTitle('');
+  };
+
   return (
     <motion.div
       layout
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, x: -20 }}
-      className={`glass-card p-3.5 flex items-center gap-3 group hover:border-glass-border-light transition-all ${
+      className={`glass-card overflow-hidden transition-all ${
         task.completed ? 'opacity-60' : ''
       }`}
     >
-      <button
-        onClick={onToggle}
-        disabled={readonly}
-        className="flex-shrink-0 text-forest-400 hover:text-forest-200 transition-colors disabled:cursor-default"
-      >
-        {task.completed
-          ? <CheckCircle2 className="w-5 h-5 text-forest-400" />
-          : <Circle className="w-5 h-5 text-forest-600" />
-        }
-      </button>
+      <div className="p-3.5 flex items-center gap-3 group hover:border-glass-border-light transition-all">
+        <button
+          onClick={onToggle}
+          disabled={readonly}
+          className="flex-shrink-0 text-forest-400 hover:text-forest-200 transition-colors disabled:cursor-default"
+        >
+          {task.completed
+            ? <CheckCircle2 className="w-5 h-5 text-forest-400" />
+            : <Circle className="w-5 h-5 text-forest-600" />
+          }
+        </button>
 
-      <div className="flex-1 min-w-0">
-        <p className={`text-sm font-medium truncate ${task.completed ? 'line-through text-forest-600' : 'text-forest-200'}`}>
-          {task.title}
-        </p>
-        {task.actualMinutes > 0 && (
-          <p className="text-[10px] text-forest-600">{task.actualMinutes}m focused</p>
+        <div className="flex-1 min-w-0 cursor-pointer" onClick={() => setExpanded(v => !v)}>
+          <p className={`text-sm font-medium truncate ${task.completed ? 'line-through text-forest-600' : 'text-forest-200'}`}>
+            {task.title}
+          </p>
+          <div className="flex items-center gap-2 mt-0.5">
+            {task.actualMinutes > 0 && (
+              <span className="text-[10px] text-forest-600">{task.actualMinutes}m focused</span>
+            )}
+            {totalSubtasks > 0 && (
+              <span className="text-[10px] font-bold text-forest-400 flex items-center gap-1">
+                <ListTodo className="w-3 h-3" />
+                {completedSubtasksCount}/{totalSubtasks} ({subtasksPct}%)
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Subtask expand button */}
+        <button
+          onClick={() => setExpanded(v => !v)}
+          className={`flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-lg border transition-all ${
+            totalSubtasks > 0
+              ? 'bg-forest-500/10 border-forest-500/30 text-forest-300 hover:bg-forest-500/20'
+              : 'text-forest-600 border-transparent hover:text-forest-400 hover:border-glass-border opacity-0 group-hover:opacity-100'
+          }`}
+          title={expanded ? 'Hide subtasks' : 'Manage subtasks'}
+        >
+          <ListTodo className="w-3.5 h-3.5" />
+          {totalSubtasks > 0 && <span>{completedSubtasksCount}/{totalSubtasks}</span>}
+          <ChevronDown className={`w-3 h-3 transition-transform ${expanded ? 'rotate-180' : ''}`} />
+        </button>
+
+        {/* Repeat indicator */}
+        {task.repeatDaily && (
+          <span className="text-forest-400 text-xs px-1.5 py-0.5 rounded bg-forest-500/10 border border-forest-500/20" title="Repeats daily">
+            <Repeat className="w-3 h-3 inline mr-0.5" /> daily
+          </span>
+        )}
+
+        {/* Category badge */}
+        <span
+          className="text-[10px] px-2 py-0.5 rounded-md font-bold border hidden sm:inline-block"
+          style={{
+            color: cat?.color || '#6b7280',
+            borderColor: (cat?.color || '#6b7280') + '40',
+            backgroundColor: (cat?.color || '#6b7280') + '12',
+          }}
+        >
+          {cat?.icon} {task.category}
+        </span>
+
+        {/* Priority dot */}
+        <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
+          task.priority === 'high' ? 'bg-red-400' :
+          task.priority === 'medium' ? 'bg-yellow-400' : 'bg-green-400'
+        }`} />
+
+        {/* Move to tomorrow */}
+        {!task.completed && !readonly && onReschedule && (
+          <button
+            onClick={onReschedule}
+            className="flex-shrink-0 text-forest-600 hover:text-forest-300 opacity-0 group-hover:opacity-100 transition-all p-1"
+            title="Move to tomorrow"
+          >
+            <CalendarPlus className="w-4 h-4" />
+          </button>
+        )}
+
+        {!readonly && (
+          <button
+            onClick={onDelete}
+            className="flex-shrink-0 text-forest-700 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
         )}
       </div>
 
-      {/* Repeat indicator */}
-      {task.repeatDaily && (
-        <span className="text-forest-400 text-xs px-1.5 py-0.5 rounded bg-forest-500/10 border border-forest-500/20" title="Repeats daily">
-          <Repeat className="w-3 h-3 inline mr-0.5" /> daily
-        </span>
-      )}
+      {/* Subtasks Accordion */}
+      <AnimatePresence>
+        {expanded && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="border-t border-glass-border px-4 py-3 bg-black/15 space-y-2.5"
+          >
+            {totalSubtasks > 0 && (
+              <div className="space-y-1.5 mb-2">
+                <div className="h-1 bg-elevated rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-forest-400 transition-all duration-300"
+                    style={{ width: `${subtasksPct}%` }}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  {subtasks.map(st => (
+                    <div key={st.id} className="flex items-center gap-2 group/sub text-xs">
+                      <button
+                        onClick={() => !readonly && onToggleSubtask(st.id)}
+                        disabled={readonly}
+                        className="text-forest-400 hover:text-forest-200 transition-colors"
+                      >
+                        {st.completed ? (
+                          <CheckSquare className="w-3.5 h-3.5 text-forest-400" />
+                        ) : (
+                          <Square className="w-3.5 h-3.5 text-forest-600" />
+                        )}
+                      </button>
+                      <span className={`flex-1 ${st.completed ? 'line-through text-forest-600' : 'text-forest-300'}`}>
+                        {st.title}
+                      </span>
+                      {!readonly && (
+                        <button
+                          onClick={() => onDeleteSubtask(st.id)}
+                          className="text-forest-700 hover:text-red-400 opacity-0 group-hover/sub:opacity-100 transition-opacity p-0.5"
+                          title="Delete subtask"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
-      {/* Category badge */}
-      <span
-        className="text-[10px] px-2 py-0.5 rounded-md font-bold border hidden sm:inline-block"
-        style={{
-          color: cat?.color || '#6b7280',
-          borderColor: (cat?.color || '#6b7280') + '40',
-          backgroundColor: (cat?.color || '#6b7280') + '12',
-        }}
-      >
-        {cat?.icon} {task.category}
-      </span>
-
-      {/* Priority dot */}
-      <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
-        task.priority === 'high' ? 'bg-red-400' :
-        task.priority === 'medium' ? 'bg-yellow-400' : 'bg-green-400'
-      }`} />
-
-      {/* Move to tomorrow */}
-      {!task.completed && !readonly && onReschedule && (
-        <button
-          onClick={onReschedule}
-          className="flex-shrink-0 text-forest-600 hover:text-forest-300 opacity-0 group-hover:opacity-100 transition-all p-1"
-          title="Move to tomorrow"
-        >
-          <CalendarPlus className="w-4 h-4" />
-        </button>
-      )}
-
-      {!readonly && (
-        <button
-          onClick={onDelete}
-          className="flex-shrink-0 text-forest-700 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
-        >
-          <Trash2 className="w-4 h-4" />
-        </button>
-      )}
+            {/* Add subtask inline input */}
+            {!readonly && (
+              <form onSubmit={handleAddSubtask} className="flex items-center gap-2 pt-1">
+                <CornerDownRight className="w-3.5 h-3.5 text-forest-600 ml-1 flex-shrink-0" />
+                <input
+                  type="text"
+                  value={newSubtaskTitle}
+                  onChange={e => setNewSubtaskTitle(e.target.value)}
+                  placeholder="Add a step or subtask..."
+                  className="flex-1 bg-elevated/60 border border-glass-border rounded-lg px-2.5 py-1.5 text-xs text-forest-200 placeholder:text-forest-600 outline-none focus:border-forest-500 transition-colors"
+                />
+                <button
+                  type="submit"
+                  disabled={!newSubtaskTitle.trim()}
+                  className="px-2.5 py-1.5 bg-forest-600/30 text-forest-200 border border-forest-500/30 rounded-lg text-xs font-bold hover:bg-forest-600/50 disabled:opacity-30 transition-all flex items-center gap-1"
+                >
+                  <Plus className="w-3 h-3" /> Add
+                </button>
+              </form>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }
