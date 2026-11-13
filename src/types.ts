@@ -5,7 +5,7 @@
 export type ItemType = 'plant' | 'tree' | 'structure' | 'dead' | 'special';
 export type Rarity = 'common' | 'rare' | 'epic' | 'legendary';
 export type Priority = 'low' | 'medium' | 'high';
-export type ViewType = 'dashboard' | 'timer' | 'tasks' | 'forest' | 'achievements' | 'leaderboard' | 'challenges' | 'settings' | 'timeline' | 'profile';
+export type ViewType = 'dashboard' | 'timer' | 'tasks' | 'forest' | 'achievements' | 'leaderboard' | 'challenges' | 'settings' | 'timeline' | 'profile' | 'rooms';
 export type AchievementCategory = 'growth' | 'focus' | 'streak' | 'tasks' | 'mastery' | 'special';
 export type ChallengeType = 'focus' | 'tasks' | 'streak' | 'forest';
 

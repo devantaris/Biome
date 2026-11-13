@@ -23,6 +23,7 @@ import Leaderboard from './components/Leaderboard';
 import Challenges from './components/Challenges';
 import Settings from './components/Settings';
 import CalendarView from './components/Calendar';
+import StudyRooms from './components/StudyRooms';
 import AuthGate from './components/AuthGate';
 import MobileNavBar from './components/MobileNavBar';
 
@@ -131,6 +132,9 @@ export default function App() {
             )}
             {view === 'challenges' && (
               <Challenges key="challenges" state={state} actions={actions} />
+            )}
+            {view === 'rooms' && (
+              <StudyRooms key="rooms" state={state} actions={actions} setView={setView} timerActions={timerActions} />
             )}
             {(view === 'settings' || view === 'profile') && (
               <Settings key="settings" state={state} actions={actions} onLogout={handleLogout} />

@@ -6,7 +6,7 @@ import { motion } from 'motion/react';
 import {
   BarChart3, Timer, ListTodo, LayoutGrid,
   Trophy, Users, Target, Settings as SettingsIcon,
-  Flame, CalendarDays, Package, LogOut, User as UserIcon
+  Flame, CalendarDays, Package, LogOut, User as UserIcon, Radio
 } from 'lucide-react';
 import type { User } from 'firebase/auth';
 import type { AppState, ViewType } from '../types';
@@ -28,6 +28,7 @@ const NAV_ITEMS: { id: ViewType; label: string; icon: React.ReactNode }[] = [
   { id: 'timeline',     label: 'Timeline',     icon: <CalendarDays /> },
   { id: 'achievements', label: 'Achievements', icon: <Trophy /> },
   { id: 'leaderboard',  label: 'Leaderboard',  icon: <Users /> },
+  { id: 'rooms',        label: 'Study Rooms',  icon: <Radio /> },
 ];
 
 export default function Sidebar({ view, setView, state, user, onLogout }: SidebarProps) {
