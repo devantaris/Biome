@@ -11,6 +11,7 @@ import { useAuth } from './hooks/useAuth';
 import { useCloudSync } from './hooks/useCloudSync';
 import { ACHIEVEMENTS } from './lib/achievements';
 import { INITIAL_STATE } from './constants';
+import { checkStreakNudge } from './lib/notifications';
 
 import TitleBar from './components/TitleBar';
 import Sidebar from './components/Sidebar';
@@ -47,6 +48,11 @@ export default function App() {
     await forceFlush(); // save everything before leaving
     await logout();
   }, [forceFlush, logout]);
+
+  // ─── Daily Streak Nudge ──────────────────────────────────────────
+  useEffect(() => {
+    checkStreakNudge(state.streak, state.settings.notificationsEnabled);
+  }, [state.streak, state.settings.notificationsEnabled]);
 
   // ─── Achievement toast ────────────────────────────────────────────
   const [achievementToast, setAchievementToast] = useState<{ id: string; title: string; icon: string } | null>(null);

@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import type { AppState, AppActions } from '../types';
 import { BIOME_THEMES } from '../constants';
+import { requestNotificationPermission } from '../lib/notifications';
 
 interface SettingsProps {
   state: AppState;
@@ -190,10 +191,16 @@ export default function Settings({ state, actions, onLogout }: SettingsProps) {
             onToggle={() => actions.updateSettings({ soundEnabled: !state.settings.soundEnabled })}
           />
           <Toggle
-            label="Desktop Notifications"
-            description="Show OS notifications when timer completes"
+            label="System & Streak Notifications"
+            description="Show desktop & web notifications when sessions complete or streaks need saving"
             enabled={state.settings.notificationsEnabled}
-            onToggle={() => actions.updateSettings({ notificationsEnabled: !state.settings.notificationsEnabled })}
+            onToggle={async () => {
+              const nextVal = !state.settings.notificationsEnabled;
+              if (nextVal) {
+                await requestNotificationPermission();
+              }
+              actions.updateSettings({ notificationsEnabled: nextVal });
+            }}
           />
           <div>
             <label className="text-[10px] font-bold text-forest-500 uppercase block mb-2">Ambient Sound Volume</label>

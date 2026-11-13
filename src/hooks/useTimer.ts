@@ -5,6 +5,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import type { AppState, AppActions, RewardItem, Task, ForestItem, FocusSession } from '../types';
 import { REWARDS } from '../constants';
 import { soundEngine } from '../lib/sounds';
+import { sendAppNotification } from '../lib/notifications';
 
 export type TimerPhase = 'idle' | 'focusing' | 'break';
 
@@ -178,10 +179,10 @@ export function useTimer(state: AppState, actions: AppActions): { timer: TimerSt
       setPhase('break');
     }
 
-    if (window.electronAPI?.showNotification) {
-      window.electronAPI.showNotification(
+    if (currentState.settings.notificationsEnabled) {
+      sendAppNotification(
         'You earned a reward! 🌱',
-        `${currentItem.name} is waiting to be planted. Open My Forest to place it!`
+        { body: `${currentItem.name} is waiting to be planted. Open My Forest to place it!` }
       );
     }
     if (window.electronAPI?.setAlwaysOnTop) {
@@ -200,8 +201,8 @@ export function useTimer(state: AppState, actions: AppActions): { timer: TimerSt
       soundEngine.playCompletionChime();
     }
 
-    if (window.electronAPI?.showNotification) {
-      window.electronAPI.showNotification('Break Over! ⏱️', 'Time to get back to focusing.');
+    if (stateRef.current.settings.notificationsEnabled) {
+      sendAppNotification('Break Over! ⏱️', { body: 'Time to get back to focusing.' });
     }
   }, []);
 
