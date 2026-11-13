@@ -188,6 +188,7 @@ export interface Profile {
   name: string;
   avatar: string;
   joinDate: number;
+  friendCode?: string;
 }
 
 // ─── App State ───────────────────────────────
@@ -206,6 +207,7 @@ export interface AppState {
   completedChallenges: string[];
   gridSize: number;              // current forest territory size (NxN), starts at 10
   expansionCount: number;        // how many times territory has expanded
+  friends?: string[];            // list of added friend codes / user IDs
 }
 
 // ─── Actions ─────────────────────────────────
@@ -242,6 +244,10 @@ export interface AppActions {
   // Profile / Settings
   updateProfile: (updates: Partial<Profile>) => void;
   updateSettings: (updates: Partial<AppSettings>) => void;
+
+  // Social / Friends
+  addFriend: (code: string) => boolean;
+  removeFriend: (code: string) => void;
 
   // Data management
   resetAll: () => void;

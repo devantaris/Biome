@@ -144,6 +144,7 @@ export const DEFAULT_PROFILE: Profile = {
   name: 'Forest Ranger',
   avatar: '🌲',
   joinDate: Date.now(),
+  friendCode: 'BIO-7A9K2',
 };
 
 export const DEFAULT_STREAK: StreakData = {
@@ -167,6 +168,7 @@ export const INITIAL_STATE: AppState = {
   completedChallenges: [],
   gridSize: INITIAL_GRID_SIZE,
   expansionCount: 0,
+  friends: [],
 };
 
 // ─── Rarity Colors ────────────────────────────

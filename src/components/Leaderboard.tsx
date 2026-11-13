@@ -3,7 +3,7 @@
 // ============================================
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { motion } from 'motion/react';
-import { Users, Crown, Medal, Flame, Target, Loader2, RotateCw } from 'lucide-react';
+import { Users, Crown, Medal, Flame, Target, Loader2, RotateCw, UserPlus, Copy, Check, Share2, Globe, Heart } from 'lucide-react';
 import type { AppState, AppActions, LeaderboardEntry } from '../types';
 import { getWeeklyChallenge } from '../lib/leaderboard';
 import { fetchLeaderboard, LeaderboardRecord } from '../lib/firestore';
@@ -18,6 +18,12 @@ interface LeaderboardProps {
 export default function Leaderboard({ state, actions, user }: LeaderboardProps) {
   const [rawRecords, setRawRecords] = useState<LeaderboardRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState<'global' | 'friends'>('global');
+  const [friendInput, setFriendInput] = useState('');
+  const [copiedCode, setCopiedCode] = useState(false);
+  const [friendMsg, setFriendMsg] = useState<string | null>(null);
+
+  const myFriendCode = state.profile.friendCode || 'BIO-' + (user?.uid ? user.uid.substring(0, 5).toUpperCase() : '7A9K2');
   const weeklyChallenge = useMemo(() => getWeeklyChallenge(), []);
 
   const weekAgo = useMemo(() => Date.now() - 7 * 24 * 60 * 60 * 1000, []);
@@ -82,6 +88,31 @@ export default function Leaderboard({ state, actions, user }: LeaderboardProps) 
     return entries;
   }, [rawRecords, user, state.profile.name, state.profile.avatar, state.streak.current, state.level, playerWeeklyMinutes]);
 
+  const handleCopyCode = () => {
+    navigator.clipboard.writeText(myFriendCode);
+    setCopiedCode(true);
+    setTimeout(() => setCopiedCode(false), 2000);
+  };
+
+  const handleAddFriend = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!friendInput.trim()) return;
+    const added = actions.addFriend(friendInput.trim());
+    if (added) {
+      setFriendMsg(`Added friend ${friendInput.trim().toUpperCase()}! 🌿`);
+      setFriendInput('');
+    } else {
+      setFriendMsg(`Friend code already added or invalid.`);
+    }
+    setTimeout(() => setFriendMsg(null), 3500);
+  };
+
+  const friendsList = state.friends || [];
+  const displayLeaderboard = useMemo(() => {
+    if (tab === 'global') return leaderboard;
+    return leaderboard.filter(e => e.isPlayer || friendsList.includes(e.name.toUpperCase()));
+  }, [tab, leaderboard, friendsList]);
+
   const playerRank = leaderboard.find(e => e.isPlayer)?.rank ?? leaderboard.length;
 
   return (
@@ -118,6 +149,52 @@ export default function Leaderboard({ state, actions, user }: LeaderboardProps) 
         </div>
       </div>
 
+      {/* Friend Code & Invite System */}
+      <div className="glass-card p-4 sm:p-5 border border-forest-500/20 bg-forest-950/20 space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <p className="text-[10px] font-bold text-forest-400 uppercase tracking-wider flex items-center gap-1.5">
+              <Share2 className="w-3.5 h-3.5 text-forest-400" /> Your Personal Friend Code
+            </p>
+            <div className="flex items-center gap-2 mt-1">
+              <span className="font-mono font-bold text-lg sm:text-xl text-forest-100 tracking-wider bg-elevated/80 px-3 py-1 rounded-xl border border-glass-border">
+                {myFriendCode}
+              </span>
+              <button
+                type="button"
+                onClick={handleCopyCode}
+                className="px-3 py-1.5 rounded-xl bg-forest-600/30 hover:bg-forest-600/50 text-forest-200 border border-forest-500/30 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+              >
+                {copiedCode ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
+                {copiedCode ? 'Copied!' : 'Copy Code'}
+              </button>
+            </div>
+          </div>
+
+          {/* Add Friend Input */}
+          <form onSubmit={handleAddFriend} className="flex items-center gap-2">
+            <input
+              type="text"
+              value={friendInput}
+              onChange={(e) => setFriendInput(e.target.value.toUpperCase())}
+              placeholder="Enter Friend Code..."
+              className="bg-elevated border border-glass-border rounded-xl px-3 py-2 text-xs font-mono text-forest-200 placeholder-forest-600 focus:ring-1 focus:ring-forest-500 outline-none w-44"
+            />
+            <button
+              type="submit"
+              disabled={!friendInput.trim()}
+              className="px-3 py-2 bg-forest-600 hover:bg-forest-500 text-white rounded-xl text-xs font-bold shadow-md transition-all flex items-center gap-1 disabled:opacity-40"
+            >
+              <UserPlus className="w-3.5 h-3.5" /> Add
+            </button>
+          </form>
+        </div>
+
+        {friendMsg && (
+          <p className="text-xs font-bold text-forest-300">{friendMsg}</p>
+        )}
+      </div>
+
       {/* Weekly Challenge */}
       <div className="glass-card p-5 border-gold-500/10">
         <div className="flex items-center gap-3 mb-3">
@@ -146,18 +223,40 @@ export default function Leaderboard({ state, actions, user }: LeaderboardProps) 
 
       {/* Rankings Table */}
       <div className="glass-card overflow-hidden">
-        <div className="p-4 border-b border-glass-border flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Users className="w-4 h-4 text-forest-400" />
-            <h3 className="font-display font-bold text-forest-200">Global Rankings — This Week</h3>
+        <div className="p-4 border-b border-glass-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          {/* Tabs */}
+          <div className="flex gap-2 p-1 bg-elevated/60 rounded-xl border border-glass-border self-start">
+            <button
+              type="button"
+              onClick={() => setTab('global')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                tab === 'global'
+                  ? 'bg-forest-600 text-white shadow-sm'
+                  : 'text-forest-400 hover:text-forest-200'
+              }`}
+            >
+              <Globe className="w-3.5 h-3.5" /> Global ({leaderboard.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setTab('friends')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                tab === 'friends'
+                  ? 'bg-forest-600 text-white shadow-sm'
+                  : 'text-forest-400 hover:text-forest-200'
+              }`}
+            >
+              <Users className="w-3.5 h-3.5" /> Friends Only ({friendsList.length})
+            </button>
           </div>
+
           <button
             onClick={loadLeaderboardData}
             disabled={loading}
-            className="text-forest-500 hover:text-forest-300 transition-colors p-1 rounded-lg hover:bg-elevated"
+            className="text-forest-500 hover:text-forest-300 transition-colors p-1.5 rounded-lg hover:bg-elevated flex items-center gap-1.5 text-xs font-bold self-end sm:self-auto"
             title="Refresh leaderboard"
           >
-            <RotateCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            <RotateCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} /> Refresh
           </button>
         </div>
         <div className="divide-y divide-glass-border">
@@ -165,12 +264,19 @@ export default function Leaderboard({ state, actions, user }: LeaderboardProps) 
             <div className="flex items-center justify-center p-8">
               <Loader2 className="w-6 h-6 animate-spin text-forest-500" />
             </div>
-          ) : leaderboard.length === 0 ? (
-            <div className="p-8 text-center text-forest-500 text-sm">
-              No data yet. Be the first to focus!
+          ) : displayLeaderboard.length === 0 || (tab === 'friends' && friendsList.length === 0) ? (
+            <div className="p-8 text-center text-forest-400 text-sm space-y-2">
+              <p className="font-bold text-forest-200">
+                {tab === 'friends' ? 'No friends added yet 🌱' : 'No data yet. Be the first to focus!'}
+              </p>
+              {tab === 'friends' && (
+                <p className="text-xs text-forest-500 max-w-sm mx-auto">
+                  Copy your friend code above and share it with your study buddies, or enter their friend code to compete together on your private leaderboard!
+                </p>
+              )}
             </div>
           ) : (
-            leaderboard.map((entry, i) => (
+            displayLeaderboard.map((entry, i) => (
               <motion.div
                 key={entry.name + i}
                 initial={{ opacity: 0, x: -10 }}

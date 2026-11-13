@@ -375,6 +375,30 @@ export const useStore = create<BiomeStore>()(
           }));
         },
 
+        addFriend: (code: string) => {
+          const trimmed = code.trim().toUpperCase();
+          if (!trimmed) return false;
+          const currentFriends = get().state.friends || [];
+          if (currentFriends.includes(trimmed)) return false;
+          set(prev => ({
+            state: {
+              ...prev.state,
+              friends: [...(prev.state.friends || []), trimmed],
+            },
+          }));
+          return true;
+        },
+
+        removeFriend: (code: string) => {
+          const trimmed = code.trim().toUpperCase();
+          set(prev => ({
+            state: {
+              ...prev.state,
+              friends: (prev.state.friends || []).filter(f => f !== trimmed),
+            },
+          }));
+        },
+
         addXp: (amount: number) => {
           const prev = get().state;
           const newXp = prev.xp + amount;
@@ -447,6 +471,7 @@ export const useStore = create<BiomeStore>()(
             settings: { ...currentState.state.settings, ...(raw.settings || {}) },
             profile: { ...currentState.state.profile, ...(raw.profile || {}) },
             streak: { ...currentState.state.streak, ...(raw.streak || {}) },
+            friends: raw.friends ?? [],
           },
         };
       },
