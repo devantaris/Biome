@@ -5,11 +5,12 @@ import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import {
   Timer, Bell, Monitor, Database, User, Download, Upload,
-  RotateCcw, Info, Keyboard, Volume2, Sparkles, Check, Shield, Palette
+  RotateCcw, Info, Keyboard, Volume2, Sparkles, Check, Shield, Palette, MessageSquare
 } from 'lucide-react';
 import type { AppState, AppActions } from '../types';
 import { BIOME_THEMES } from '../constants';
 import { requestNotificationPermission } from '../lib/notifications';
+import FeedbackModal from './FeedbackModal';
 
 interface SettingsProps {
   state: AppState;
@@ -21,6 +22,8 @@ const AVATARS = ['🌲', '🌳', '🌴', '🌵', '🌸', '🍀', '🦊', '🐺',
 
 export default function Settings({ state, actions, onLogout }: SettingsProps) {
   const [importStatus, setImportStatus] = useState<string | null>(null);
+  const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
+  const [waitlistModalOpen, setWaitlistModalOpen] = useState(false);
 
   const handleExport = () => {
     const data = actions.exportData();
@@ -293,8 +296,11 @@ export default function Settings({ state, actions, onLogout }: SettingsProps) {
                   <li className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-forest-500 flex-shrink-0" /> Google Calendar 2-way Sync</li>
                 </ul>
               </div>
-              <button disabled className="mt-4 w-full py-2 bg-elevated/50 text-forest-500 border border-glass-border rounded-lg text-xs font-bold cursor-not-allowed">
-                Coming Soon
+              <button
+                onClick={() => setWaitlistModalOpen(true)}
+                className="mt-4 w-full py-2 bg-gradient-to-r from-amber-600/30 to-amber-500/30 hover:from-amber-600/50 hover:to-amber-500/50 text-amber-200 border border-amber-500/40 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <Sparkles className="w-3.5 h-3.5" /> Join Pro Waitlist
               </button>
             </div>
 
@@ -313,11 +319,32 @@ export default function Settings({ state, actions, onLogout }: SettingsProps) {
                   <li className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-forest-500 flex-shrink-0" /> Admin Analytics & Activity Export</li>
                 </ul>
               </div>
-              <button disabled className="mt-4 w-full py-2 bg-elevated/50 text-forest-500 border border-glass-border rounded-lg text-xs font-bold cursor-not-allowed">
-                Coming Soon
+              <button
+                onClick={() => setWaitlistModalOpen(true)}
+                className="mt-4 w-full py-2 bg-gradient-to-r from-blue-600/20 to-blue-500/20 hover:from-blue-600/40 hover:to-blue-500/40 text-blue-300 border border-blue-500/30 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                Join Team Waitlist
               </button>
             </div>
           </div>
+        </div>
+      </SettingsSection>
+
+      {/* Community & Feedback */}
+      <SettingsSection icon={<MessageSquare />} title="Community & Feedback">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <button
+            onClick={() => setFeedbackModalOpen(true)}
+            className="flex-1 py-3 glass-card text-forest-200 font-bold text-xs flex items-center justify-center gap-2 hover:bg-elevated transition-all border border-forest-500/20"
+          >
+            <MessageSquare className="w-4 h-4 text-forest-400" /> Give Feedback or Report Bug
+          </button>
+          <button
+            onClick={() => setWaitlistModalOpen(true)}
+            className="flex-1 py-3 glass-card text-amber-300 font-bold text-xs flex items-center justify-center gap-2 hover:bg-elevated transition-all border border-amber-500/20"
+          >
+            <Sparkles className="w-4 h-4 text-amber-400" /> Join Early Access Waitlist
+          </button>
         </div>
       </SettingsSection>
 
@@ -371,6 +398,13 @@ export default function Settings({ state, actions, onLogout }: SettingsProps) {
       <div className="glass-card p-4 text-center text-xs text-forest-600">
         Member since {new Date(state.profile.joinDate).toLocaleDateString()} · {state.sessions.length} sessions · {state.totalFocusMinutes} total minutes focused
       </div>
+
+      {/* Feedback & Waitlist Modal */}
+      <FeedbackModal
+        isOpen={feedbackModalOpen || waitlistModalOpen}
+        onClose={() => { setFeedbackModalOpen(false); setWaitlistModalOpen(false); }}
+        initialTab={waitlistModalOpen ? 'waitlist' : 'feedback'}
+      />
     </motion.div>
   );
 }

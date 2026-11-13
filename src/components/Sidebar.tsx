@@ -6,11 +6,12 @@ import { motion } from 'motion/react';
 import {
   BarChart3, Timer, ListTodo, LayoutGrid,
   Trophy, Users, Target, Settings as SettingsIcon,
-  Flame, CalendarDays, Package, LogOut, User as UserIcon, Radio
+  Flame, CalendarDays, Package, LogOut, User as UserIcon, Radio, MessageSquare
 } from 'lucide-react';
 import type { User } from 'firebase/auth';
 import type { AppState, ViewType } from '../types';
 import { XP_PER_LEVEL } from '../constants';
+import FeedbackModal from './FeedbackModal';
 
 interface SidebarProps {
   view: ViewType;
@@ -32,6 +33,7 @@ const NAV_ITEMS: { id: ViewType; label: string; icon: React.ReactNode }[] = [
 ];
 
 export default function Sidebar({ view, setView, state, user, onLogout }: SidebarProps) {
+  const [showFeedback, setShowFeedback] = React.useState(false);
   const xpInLevel = state.xp % XP_PER_LEVEL;
   const xpProgress = (xpInLevel / XP_PER_LEVEL) * 100;
   const inventoryCount = state.inventory?.length ?? 0;
@@ -128,13 +130,22 @@ export default function Sidebar({ view, setView, state, user, onLogout }: Sideba
       </nav>
 
       {/* Settings (bottom) */}
-      <div className="p-3 border-t border-glass-border">
+      <div className="p-3 border-t border-glass-border space-y-1">
         <NavItem
           icon={<SettingsIcon />}
           label="Settings"
           active={view === 'settings' || view === 'profile'}
           onClick={() => setView('settings')}
         />
+        <button
+          onClick={() => setShowFeedback(true)}
+          className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold text-forest-500 hover:text-forest-300 hover:bg-elevated/40 transition-all"
+        >
+          <span className="w-[18px] h-[18px] flex items-center justify-center">
+            <MessageSquare className="w-3.5 h-3.5" />
+          </span>
+          <span>Feedback & Waitlist</span>
+        </button>
       </div>
 
       {/* Mini Stats */}
@@ -154,6 +165,12 @@ export default function Sidebar({ view, setView, state, user, onLogout }: Sideba
           </div>
         </div>
       </div>
+
+      <FeedbackModal
+        isOpen={showFeedback}
+        onClose={() => setShowFeedback(false)}
+        initialTab="feedback"
+      />
     </aside>
   );
 }
