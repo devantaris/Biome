@@ -2,7 +2,7 @@
 // Focus Forest Pro — Main App Shell v3
 // Auth gate → Onboarding → Main app
 // ============================================
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import type { ViewType } from './types';
 import { useAppState } from './hooks/useAppState';
@@ -17,18 +17,32 @@ import TitleBar from './components/TitleBar';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import TimerView from './components/Timer';
-import TaskManager from './components/TaskManager';
-import ForestView from './components/ForestView';
-import Achievements from './components/Achievements';
-import Leaderboard from './components/Leaderboard';
-import Challenges from './components/Challenges';
-import Settings from './components/Settings';
-import CalendarView from './components/Calendar';
-import StudyRooms from './components/StudyRooms';
 import AuthGate from './components/AuthGate';
-import Onboarding from './components/Onboarding';
 import MobileNavBar from './components/MobileNavBar';
 import ErrorBoundary from './components/ErrorBoundary';
+
+// Lazy-loaded secondary views for code splitting and instant startup
+const TaskManager = lazy(() => import('./components/TaskManager'));
+const ForestView = lazy(() => import('./components/ForestView'));
+const CalendarView = lazy(() => import('./components/Calendar'));
+const Achievements = lazy(() => import('./components/Achievements'));
+const Leaderboard = lazy(() => import('./components/Leaderboard'));
+const Challenges = lazy(() => import('./components/Challenges'));
+const Settings = lazy(() => import('./components/Settings'));
+const StudyRooms = lazy(() => import('./components/StudyRooms'));
+const Onboarding = lazy(() => import('./components/Onboarding'));
+
+function ViewLoader() {
+  return (
+    <div className="flex items-center justify-center min-h-[300px] h-64">
+      <motion.div
+        animate={{ rotate: 360 }}
+        transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }}
+        className="w-8 h-8 border-2 border-forest-500 border-t-transparent rounded-full"
+      />
+    </div>
+  );
+}
 
 
 export default function App() {
@@ -109,13 +123,15 @@ export default function App() {
   // ─── First-time onboarding walkthrough ────────────────────────────
   if (!hasOnboarded) {
     return (
-      <Onboarding
-        actions={actions}
-        onComplete={() => {
-          localStorage.setItem('biome_onboarded', 'true');
-          setHasOnboarded(true);
-        }}
-      />
+      <Suspense fallback={<ViewLoader />}>
+        <Onboarding
+          actions={actions}
+          onComplete={() => {
+            localStorage.setItem('biome_onboarded', 'true');
+            setHasOnboarded(true);
+          }}
+        />
+      </Suspense>
     );
   }
 
@@ -133,38 +149,40 @@ export default function App() {
         {/* Main content area */}
         <main className="flex-1 p-4 md:p-8 pb-24 md:pb-8 md:overflow-y-auto md:h-screen scroll-smooth">
           <ErrorBoundary label="the main view">
-          <AnimatePresence mode="wait">
-            {view === 'dashboard' && (
-              <Dashboard key="dashboard" state={state} actions={actions} setView={setView} timerActions={timerActions} />
-            )}
-            {view === 'timer' && (
-              <TimerView key="timer" state={state} timer={timer} timerActions={timerActions} showReward={showReward} clearReward={clearReward} />
-            )}
-            {view === 'tasks' && (
-              <TaskManager key="tasks" state={state} actions={actions} />
-            )}
-            {view === 'forest' && (
-              <ForestView key="forest" state={state} actions={actions} />
-            )}
-            {view === 'timeline' && (
-              <CalendarView key="timeline" state={state} />
-            )}
-            {view === 'achievements' && (
-              <Achievements key="achievements" state={state} />
-            )}
-            {view === 'leaderboard' && (
-              <Leaderboard key="leaderboard" state={state} actions={actions} user={user} />
-            )}
-            {view === 'challenges' && (
-              <Challenges key="challenges" state={state} actions={actions} />
-            )}
-            {view === 'rooms' && (
-              <StudyRooms key="rooms" state={state} actions={actions} setView={setView} timerActions={timerActions} />
-            )}
-            {(view === 'settings' || view === 'profile') && (
-              <Settings key="settings" state={state} actions={actions} onLogout={handleLogout} />
-            )}
-          </AnimatePresence>
+            <Suspense fallback={<ViewLoader />}>
+              <AnimatePresence mode="wait">
+                {view === 'dashboard' && (
+                  <Dashboard key="dashboard" state={state} actions={actions} setView={setView} timerActions={timerActions} />
+                )}
+                {view === 'timer' && (
+                  <TimerView key="timer" state={state} timer={timer} timerActions={timerActions} showReward={showReward} clearReward={clearReward} />
+                )}
+                {view === 'tasks' && (
+                  <TaskManager key="tasks" state={state} actions={actions} />
+                )}
+                {view === 'forest' && (
+                  <ForestView key="forest" state={state} actions={actions} />
+                )}
+                {view === 'timeline' && (
+                  <CalendarView key="timeline" state={state} />
+                )}
+                {view === 'achievements' && (
+                  <Achievements key="achievements" state={state} />
+                )}
+                {view === 'leaderboard' && (
+                  <Leaderboard key="leaderboard" state={state} actions={actions} user={user} />
+                )}
+                {view === 'challenges' && (
+                  <Challenges key="challenges" state={state} actions={actions} />
+                )}
+                {view === 'rooms' && (
+                  <StudyRooms key="rooms" state={state} actions={actions} setView={setView} timerActions={timerActions} />
+                )}
+                {(view === 'settings' || view === 'profile') && (
+                  <Settings key="settings" state={state} actions={actions} onLogout={handleLogout} />
+                )}
+              </AnimatePresence>
+            </Suspense>
           </ErrorBoundary>
         </main>
       </div>
