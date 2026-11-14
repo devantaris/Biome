@@ -381,6 +381,8 @@ export default function ForestView({ state, actions }: ForestViewProps) {
               style={{ transform: `scale(${zoom})` }}
             >
               <div
+                role="grid"
+                aria-label="Forest territory grid"
                 className="grid gap-0"
                 style={{
                   gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`,
@@ -414,17 +416,32 @@ export default function ForestView({ state, actions }: ForestViewProps) {
                 // Only render the item icon once if it's 2x2 (on its top-left cell)
                 const isItemRoot = item && item.x === x && item.y === y;
 
+                const tileLabel = item
+                  ? `${item.name}, ${item.rarity} rarity placed at column ${x + 1}, row ${y + 1}`
+                  : isPlaceable
+                  ? `Place item at column ${x + 1}, row ${y + 1}`
+                  : `Empty tile at column ${x + 1}, row ${y + 1}`;
+
                 return (
                   <div
                     key={idx}
-                    onClick={() => isPlaceable ? handleTileClick(x, y) : handleTileClick(x, y)}
+                    role="gridcell"
+                    tabIndex={isPlaceable || item ? 0 : -1}
+                    aria-label={tileLabel}
+                    onClick={() => handleTileClick(x, y)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleTileClick(x, y);
+                      }
+                    }}
                     onMouseEnter={() => (isPlaceable || item) && setHoveredTile({ x, y })}
                     onMouseLeave={() => setHoveredTile(null)}
                     className={`
                       aspect-square flex items-center justify-center relative group
                       border ${currentTheme.cellBorder} transition-all rounded-md m-[1px]
                       ${cellBg}
-                      ${isPlaceable ? 'cursor-pointer' : item && item.type !== 'dead' && !activeItem ? 'cursor-grab hover:bg-forest-700/30' : 'cursor-default'}
+                      ${isPlaceable ? 'cursor-pointer focus:ring-2 focus:ring-forest-400 focus:outline-none' : item && item.type !== 'dead' && !activeItem ? 'cursor-grab hover:bg-forest-700/30 focus:ring-2 focus:ring-forest-400 focus:outline-none' : 'cursor-default'}
                       ${isPlaceable && isHoveredArea ? 'z-10 shadow-lg shadow-forest-500/20' : ''}
                     `}
                   >

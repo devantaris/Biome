@@ -118,10 +118,13 @@ export default function TimerView({ state, timer, timerActions, showReward, clea
         /* ─── Setup Mode ─── */
         <div className="w-full space-y-5 max-w-xl">
           {/* Duration Presets */}
-          <div className="flex flex-wrap justify-center gap-2">
+          <div className="flex flex-wrap justify-center gap-2" role="group" aria-label="Timer duration presets">
             {TIMER_PRESETS.map(mins => (
               <button
                 key={mins}
+                type="button"
+                aria-pressed={timer.selectedDuration === mins}
+                aria-label={`${mins} minutes focus duration`}
                 onClick={() => timerActions.setDuration(mins)}
                 className={`px-5 py-2.5 rounded-xl border font-bold text-sm transition-all ${
                   timer.selectedDuration === mins
@@ -242,6 +245,8 @@ export default function TimerView({ state, timer, timerActions, showReward, clea
 
           {/* Start Button */}
           <button
+            type="button"
+            aria-label="Start Focus Session"
             onClick={timerActions.start}
             className="w-full py-4 bg-gradient-to-r from-forest-600 to-forest-500 text-white rounded-2xl font-bold text-lg shadow-2xl shadow-forest-900/50 hover:from-forest-500 hover:to-forest-400 transition-all flex items-center justify-center gap-3 group"
           >
@@ -292,6 +297,8 @@ export default function TimerView({ state, timer, timerActions, showReward, clea
           <div className="flex items-center gap-3 w-full justify-center">
             {timer.isPaused ? (
               <button
+                type="button"
+                aria-label="Resume focus session"
                 onClick={timerActions.resume}
                 className="px-6 py-3 bg-forest-600 hover:bg-forest-500 text-white rounded-xl font-bold shadow-lg shadow-forest-900/40 transition-all flex items-center gap-2"
               >
@@ -300,6 +307,8 @@ export default function TimerView({ state, timer, timerActions, showReward, clea
               </button>
             ) : (
               <button
+                type="button"
+                aria-label="Pause focus session"
                 onClick={timerActions.pause}
                 disabled={timer.pausesLeft <= 0}
                 className="px-6 py-3 bg-amber-500/10 text-amber-300 border border-amber-500/20 hover:bg-amber-500/20 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl font-bold transition-all flex items-center gap-2"
@@ -312,6 +321,8 @@ export default function TimerView({ state, timer, timerActions, showReward, clea
 
             {/* Give Up Button */}
             <button
+              type="button"
+              aria-label="Give up focus session and plant withered shrub penalty"
               onClick={() => setShowGiveUpConfirm(true)}
               className="px-6 py-3 bg-red-500/10 text-red-400 rounded-xl font-bold border border-red-500/20 hover:bg-red-500/20 transition-all flex items-center gap-2"
             >

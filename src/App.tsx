@@ -138,6 +138,12 @@ export default function App() {
   // ─── Main app ─────────────────────────────────────────────────────
   return (
     <div className={`bg-deep min-h-screen flex flex-col ${state.settings.themeMode === 'light' ? 'theme-light' : ''}`}>
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-forest-600 focus:text-white focus:rounded-lg focus:shadow-xl focus:outline-none focus:ring-2 focus:ring-emerald-400 text-xs font-bold"
+      >
+        Skip to main content
+      </a>
       {isElectron && <TitleBar />}
 
       <div className="flex flex-1">
@@ -147,7 +153,7 @@ export default function App() {
         </div>
 
         {/* Main content area */}
-        <main className="flex-1 p-4 md:p-8 pb-24 md:pb-8 md:overflow-y-auto md:h-screen scroll-smooth">
+        <main id="main-content" tabIndex={-1} className="flex-1 p-4 md:p-8 pb-24 md:pb-8 md:overflow-y-auto md:h-screen scroll-smooth focus:outline-none">
           <ErrorBoundary label="the main view">
             <Suspense fallback={<ViewLoader />}>
               <AnimatePresence mode="wait">
