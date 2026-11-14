@@ -4,7 +4,7 @@
 // ============================================
 import {
   doc, getDoc, setDoc, onSnapshot,
-  collection, getDocs, query, orderBy, limit,
+  collection, getDocs, query, orderBy, limit, where,
   serverTimestamp, Timestamp,
 } from 'firebase/firestore';
 import { db } from './firebase';
@@ -83,6 +83,7 @@ export interface LeaderboardRecord {
   streak: number;
   level: number;
   forestSize: number;
+  friendCode?: string;
   updatedAt?: Timestamp;
 }
 
@@ -98,6 +99,8 @@ export async function updateLeaderboardEntry(
       .filter(s => s.completed && s.startTime > oneWeekAgo)
       .reduce((sum, s) => sum + s.duration, 0);
 
+    const friendCode = state.profile.friendCode || `BIO-${uid.substring(0, 5).toUpperCase()}`;
+
     const entry: LeaderboardRecord = {
       uid,
       name: state.profile.name,
@@ -107,6 +110,7 @@ export async function updateLeaderboardEntry(
       streak: state.streak.current,
       level: state.level,
       forestSize: state.forest.filter(f => f.type !== 'dead').length,
+      friendCode,
     };
 
     await setDoc(doc(db, 'leaderboard', uid), {
@@ -131,5 +135,25 @@ export async function fetchLeaderboard(topN = 20): Promise<LeaderboardRecord[]> 
   } catch (err) {
     console.warn('[Leaderboard] Failed to fetch:', err);
     return [];
+  }
+}
+
+/** Look up a user by their unique friend code */
+export async function lookupUserByFriendCode(code: string): Promise<LeaderboardRecord | null> {
+  try {
+    const clean = code.trim().toUpperCase();
+    const q = query(
+      collection(db, 'leaderboard'),
+      where('friendCode', '==', clean),
+      limit(1)
+    );
+    const snap = await getDocs(q);
+    if (!snap.empty) {
+      return snap.docs[0].data() as LeaderboardRecord;
+    }
+    return null;
+  } catch (err) {
+    console.warn('[Leaderboard] Friend code lookup failed:', err);
+    return null;
   }
 }

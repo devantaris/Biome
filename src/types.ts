@@ -132,6 +132,7 @@ export interface LeaderboardEntry {
   streak: number;
   level: number;
   isPlayer: boolean;
+  friendCode?: string;
 }
 
 export interface DailyChallenge {

@@ -6,7 +6,7 @@ import { motion } from 'motion/react';
 import { Users, Crown, Medal, Flame, Target, Loader2, RotateCw, UserPlus, Copy, Check, Share2, Globe, Heart } from 'lucide-react';
 import type { AppState, AppActions, LeaderboardEntry } from '../types';
 import { getWeeklyChallenge } from '../lib/leaderboard';
-import { fetchLeaderboard, LeaderboardRecord } from '../lib/firestore';
+import { fetchLeaderboard, lookupUserByFriendCode, LeaderboardRecord } from '../lib/firestore';
 import { formatDuration } from '../lib/analytics';
 
 interface LeaderboardProps {
@@ -60,6 +60,7 @@ export default function Leaderboard({ state, actions, user }: LeaderboardProps) 
       streak: u.streak,
       level: u.level,
       isPlayer: u.uid === user?.uid,
+      friendCode: u.friendCode || `BIO-${u.uid.substring(0, 5).toUpperCase()}`,
     }));
 
     if (user && !entries.some(e => e.isPlayer)) {
@@ -71,6 +72,7 @@ export default function Leaderboard({ state, actions, user }: LeaderboardProps) 
         streak: state.streak.current,
         level: state.level,
         isPlayer: true,
+        friendCode: myFriendCode,
       });
     } else if (user) {
       const userEntry = entries.find(e => e.isPlayer);
@@ -80,13 +82,14 @@ export default function Leaderboard({ state, actions, user }: LeaderboardProps) 
         userEntry.avatar = state.profile.avatar;
         userEntry.streak = state.streak.current;
         userEntry.level = state.level;
+        userEntry.friendCode = myFriendCode;
       }
     }
 
     entries.sort((a, b) => b.weeklyMinutes - a.weeklyMinutes);
     entries.forEach((e, i) => (e.rank = i + 1));
     return entries;
-  }, [rawRecords, user, state.profile.name, state.profile.avatar, state.streak.current, state.level, playerWeeklyMinutes]);
+  }, [rawRecords, user, state.profile.name, state.profile.avatar, state.streak.current, state.level, playerWeeklyMinutes, myFriendCode]);
 
   const handleCopyCode = () => {
     navigator.clipboard.writeText(myFriendCode);
@@ -94,15 +97,28 @@ export default function Leaderboard({ state, actions, user }: LeaderboardProps) 
     setTimeout(() => setCopiedCode(false), 2000);
   };
 
-  const handleAddFriend = (e: React.FormEvent) => {
+  const handleAddFriend = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!friendInput.trim()) return;
-    const added = actions.addFriend(friendInput.trim());
+    const code = friendInput.trim().toUpperCase();
+    if (!code) return;
+    if (code === myFriendCode.toUpperCase()) {
+      setFriendMsg(`That is your own friend code! 🌲`);
+      setTimeout(() => setFriendMsg(null), 3500);
+      return;
+    }
+
+    // Attempt lookup in Firestore
+    const onlineFriend = await lookupUserByFriendCode(code);
+    const added = actions.addFriend(code);
     if (added) {
-      setFriendMsg(`Added friend ${friendInput.trim().toUpperCase()}! 🌿`);
+      if (onlineFriend) {
+        setFriendMsg(`Added ${onlineFriend.name} (${onlineFriend.friendCode})! 🌿`);
+      } else {
+        setFriendMsg(`Added friend ${code}! 🌿`);
+      }
       setFriendInput('');
     } else {
-      setFriendMsg(`Friend code already added or invalid.`);
+      setFriendMsg(`Friend code already added.`);
     }
     setTimeout(() => setFriendMsg(null), 3500);
   };
@@ -110,7 +126,12 @@ export default function Leaderboard({ state, actions, user }: LeaderboardProps) 
   const friendsList = state.friends || [];
   const displayLeaderboard = useMemo(() => {
     if (tab === 'global') return leaderboard;
-    return leaderboard.filter(e => e.isPlayer || friendsList.includes(e.name.toUpperCase()));
+    return leaderboard.filter(e => {
+      if (e.isPlayer) return true;
+      const code = e.friendCode?.toUpperCase();
+      const name = e.name.toUpperCase();
+      return friendsList.some(f => f === code || f === name);
+    });
   }, [tab, leaderboard, friendsList]);
 
   const playerRank = leaderboard.find(e => e.isPlayer)?.rank ?? leaderboard.length;
@@ -305,7 +326,11 @@ export default function Leaderboard({ state, actions, user }: LeaderboardProps) 
                   <div>
                     <p className={`font-bold text-sm ${entry.isPlayer ? 'text-forest-200' : 'text-forest-300'}`}>
                       {entry.name}
-                      {entry.isPlayer && <span className="text-[9px] ml-2 text-forest-400 font-normal">(You)</span>}
+                      {entry.isPlayer ? (
+                        <span className="text-[9px] ml-2 text-forest-400 font-normal">(You)</span>
+                      ) : entry.friendCode ? (
+                        <span className="text-[9px] ml-2 text-forest-500 font-mono font-normal">#{entry.friendCode}</span>
+                      ) : null}
                     </p>
                     <div className="flex items-center gap-2 text-[10px] text-forest-600">
                       <span>Lv.{entry.level}</span>
