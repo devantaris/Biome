@@ -4,9 +4,10 @@
 // ============================================
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ChevronLeft, ChevronRight, Clock, CheckSquare, TreePine, Maximize2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Clock, CheckSquare, TreePine, Maximize2, Calendar as CalendarIcon, Download, ExternalLink } from 'lucide-react';
 import type { AppState } from '../types';
 import { REWARDS } from '../constants';
+import { getGoogleCalendarBlockUrl, exportSessionsToIcs } from '../lib/calendarExport';
 
 interface CalendarProps {
   state: AppState;
@@ -143,9 +144,36 @@ export default function CalendarView({ state }: CalendarProps) {
       className="max-w-3xl mx-auto space-y-5"
     >
       {/* ─── Header ─── */}
-      <header>
-        <h2 className="text-3xl font-display font-bold text-forest-100">Timeline</h2>
-        <p className="text-forest-500">Your focus history at a glance</p>
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h2 className="text-3xl font-display font-bold text-forest-100">Timeline</h2>
+          <p className="text-forest-500">Your focus history at a glance</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <a
+            href={getGoogleCalendarBlockUrl('Focus Block', 30, 'Deep work session in Biome')}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-3 py-1.5 rounded-xl bg-forest-600/20 hover:bg-forest-600/30 border border-forest-500/30 text-xs font-bold text-forest-200 flex items-center gap-1.5 transition-all"
+            title="Open Google Calendar to block focus time"
+          >
+            <CalendarIcon className="w-3.5 h-3.5 text-forest-400" />
+            <span>Block GCal</span>
+            <ExternalLink className="w-3 h-3 text-forest-500" />
+          </a>
+          <button
+            type="button"
+            onClick={() => {
+              const ok = exportSessionsToIcs(state.sessions);
+              if (!ok) alert('No completed sessions to export yet!');
+            }}
+            className="px-3 py-1.5 rounded-xl bg-elevated/60 hover:bg-elevated border border-glass-border text-xs font-bold text-forest-300 flex items-center gap-1.5 transition-all"
+            title="Download sessions as .ics calendar file"
+          >
+            <Download className="w-3.5 h-3.5 text-forest-400" />
+            <span>Export .ICS</span>
+          </button>
+        </div>
       </header>
 
       {/* ─── Month summary ─── */}
