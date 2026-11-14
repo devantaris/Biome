@@ -552,6 +552,32 @@ class AmbientSoundEngine {
       osc.stop(t + 0.5);
     });
   }
+
+  playExpansionFanfare() {
+    const ctx = this.getContext();
+    const now = ctx.currentTime;
+
+    // Grand ascending fanfare chords: C5, E5, G5, C6, G6
+    const notes = [523.25, 659.25, 783.99, 1046.50, 1567.98];
+
+    notes.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      osc.type = 'triangle';
+      osc.frequency.value = freq;
+
+      const gain = ctx.createGain();
+      const t = now + i * 0.12;
+      const duration = i === notes.length - 1 ? 0.9 : 0.45;
+      gain.gain.setValueAtTime(0, t);
+      gain.gain.linearRampToValueAtTime(0.22, t + 0.04);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + duration);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(t);
+      osc.stop(t + duration + 0.05);
+    });
+  }
 }
 
 // Singleton

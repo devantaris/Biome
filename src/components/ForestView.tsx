@@ -4,10 +4,21 @@
 // ============================================
 import React, { useMemo, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Package, X, Maximize2, Info, ZoomIn, ZoomOut, RotateCcw, Move, RotateCcw as ReturnIcon, Trash2, Share2, Check, Copy, ChevronDown } from 'lucide-react';
+import { Package, X, Maximize2, Info, ZoomIn, ZoomOut, RotateCcw, Move, RotateCcw as ReturnIcon, Trash2, Share2, Check, Copy, ChevronDown, Sparkles } from 'lucide-react';
 import type { AppState, AppActions, ForestItem, InventoryItem } from '../types';
 import { RARITY_COLORS, RARITY_BG, BIOME_THEMES } from '../constants';
 import { haptics } from '../lib/haptics';
+import { soundEngine } from '../lib/sounds';
+
+const CELEBRATION_PARTICLES = Array.from({ length: 28 }).map((_, i) => ({
+  id: i,
+  x: ((i * 37) % 320) - 160,
+  y: -(((i * 29) % 240) + 40),
+  rotation: ((i * 83) % 720) - 360,
+  scale: 0.6 + ((i * 17) % 50) / 100,
+  color: ['#10b981', '#fbbf24', '#34d399', '#38bdf8', '#f59e0b', '#ec4899', '#a855f7'][i % 7],
+  shape: i % 3 === 0 ? 'circle' : i % 3 === 1 ? 'square' : 'star',
+}));
 
 interface ForestViewProps {
   state: AppState;
@@ -131,15 +142,18 @@ export default function ForestView({ state, actions }: ForestViewProps) {
 
       if (willExpand) {
         setExpansionFlash(true);
+        if (state.settings.soundEnabled) {
+          soundEngine.playExpansionFanfare();
+        }
         haptics.celebration();
-        setTimeout(() => setExpansionFlash(false), 3000);
+        setTimeout(() => setExpansionFlash(false), 3800);
       }
     } else if (movingItem) {
       actions.moveForestItem(movingItem.id, x, y);
       setMovingItem(null);
       haptics.light();
     }
-  }, [placingItem, movingItem, gridMap, livingItems.length, totalTiles, gridSize, actions]);
+  }, [placingItem, movingItem, gridMap, livingItems.length, totalTiles, gridSize, actions, state.settings.soundEnabled]);
 
   const rarityBreakdown = useMemo(() => {
     const counts: Record<string, number> = { common: 0, rare: 0, epic: 0, legendary: 0 };
@@ -316,19 +330,47 @@ export default function ForestView({ state, actions }: ForestViewProps) {
         </div>
       </div>
 
-      {/* ─── Territory Expanded Flash ─── */}
+      {/* ─── Territory Expanded Celebration Overlay ─── */}
       <AnimatePresence>
         {expansionFlash && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: -20 }}
+            initial={{ opacity: 0, scale: 0.85, y: -20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: -20 }}
-            className="glass-card p-5 text-center border-gold-500/30 bg-gradient-to-r from-gold-500/10 to-transparent flex-shrink-0"
+            exit={{ opacity: 0, scale: 0.9, y: -15 }}
+            transition={{ type: 'spring', damping: 20, stiffness: 200 }}
+            className="relative glass-card p-6 text-center border-2 border-gold-400/50 bg-gradient-to-r from-gold-500/20 via-forest-900/90 to-emerald-500/20 shadow-2xl shadow-gold-500/20 flex-shrink-0 overflow-hidden"
           >
-            <p className="text-2xl font-display font-bold text-gold-400">🌍 World Expanded!</p>
-            <p className="text-forest-400 text-sm mt-1">
-              Your territory grew to {state.gridSize}×{state.gridSize} — {state.gridSize * state.gridSize} tiles!
-            </p>
+            {/* Ambient Particle Burst */}
+            <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+              {CELEBRATION_PARTICLES.map(p => (
+                <motion.div
+                  key={p.id}
+                  initial={{ x: 0, y: 0, opacity: 1, scale: 0 }}
+                  animate={{
+                    x: p.x,
+                    y: p.y,
+                    opacity: [0, 1, 1, 0],
+                    scale: [0, p.scale, p.scale * 1.2, 0.2],
+                    rotate: p.rotation,
+                  }}
+                  transition={{ duration: 2.4, ease: 'easeOut' }}
+                  style={{ backgroundColor: p.color }}
+                  className={`absolute w-3 h-3 ${p.shape === 'circle' ? 'rounded-full' : 'rounded-sm'}`}
+                />
+              ))}
+            </div>
+
+            <div className="relative z-10 flex flex-col items-center">
+              <div className="w-14 h-14 rounded-full bg-gold-500/20 border border-gold-400/40 flex items-center justify-center mb-2 animate-bounce">
+                <Sparkles className="w-8 h-8 text-gold-400" />
+              </div>
+              <p className="text-3xl font-display font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-gold-300 via-amber-200 to-gold-400">
+                🌍 World Expanded!
+              </p>
+              <p className="text-forest-200 text-sm mt-1 max-w-md font-medium">
+                Your focused kingdom grew to <span className="text-gold-300 font-bold">{state.gridSize}×{state.gridSize}</span> — {state.gridSize * state.gridSize} tiles unlocked for rare species & monuments!
+              </p>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
