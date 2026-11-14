@@ -252,6 +252,7 @@ export interface AppActions {
   addSubtask: (taskId: string, title: string) => void;
   toggleSubtask: (taskId: string, subtaskId: string) => void;
   deleteSubtask: (taskId: string, subtaskId: string) => void;
+  reorderTasks: (tasks: Task[]) => void;
 
   // Sessions
   addSession: (session: FocusSession) => void;

@@ -302,6 +302,15 @@ export const useStore = create<BiomeStore>()(
           }));
         },
 
+        reorderTasks: (tasks: Task[]) => {
+          set(prev => ({
+            state: {
+              ...prev.state,
+              tasks,
+            },
+          }));
+        },
+
         addSession: (session: FocusSession) => {
           const prev = get().state;
           const newSessions = [...prev.sessions, session];

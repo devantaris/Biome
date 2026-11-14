@@ -8,7 +8,8 @@ import {
   Plus, Trash2, CheckCircle2, Circle,
   ChevronLeft, ChevronRight, Calendar,
   ChevronDown, Repeat, CalendarPlus,
-  ListTodo, CheckSquare, Square, CornerDownRight
+  ListTodo, CheckSquare, Square, CornerDownRight,
+  GripVertical, ArrowUp, ArrowDown, Filter
 } from 'lucide-react';
 import type { AppState, AppActions, Priority, Task } from '../types';
 import { CATEGORIES } from '../constants';
@@ -50,6 +51,8 @@ function formatDayShort(dateStr: string): string {
   return d.toLocaleDateString('en-US', { weekday: 'short' });
 }
 
+export type TaskFilterType = 'all' | 'active' | 'done' | 'high';
+
 export default function TaskManager({ state, actions }: TaskManagerProps) {
   const todayStr = toDateStr(new Date());
   const [activeDate, setActiveDate] = useState(todayStr);
@@ -57,8 +60,9 @@ export default function TaskManager({ state, actions }: TaskManagerProps) {
   const [newCategory, setNewCategory] = useState('work');
   const [newPriority, setNewPriority] = useState<Priority>('medium');
   const [newRepeatDaily, setNewRepeatDaily] = useState(false);
-  const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'done'>('all');
+  const [filterStatus, setFilterStatus] = useState<TaskFilterType>('all');
   const [showCompleted, setShowCompleted] = useState(false);
+  const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
 
   const isPast = activeDate < todayStr;
   const isFuture = activeDate > todayStr;
@@ -75,10 +79,12 @@ export default function TaskManager({ state, actions }: TaskManagerProps) {
   const filteredTasks = useMemo(() => {
     if (filterStatus === 'active') return activeDayTasks;
     if (filterStatus === 'done') return completedDayTasks;
+    if (filterStatus === 'high') return dayTasks.filter(t => t.priority === 'high');
     return dayTasks;
   }, [dayTasks, activeDayTasks, completedDayTasks, filterStatus]);
 
   const completedCount = completedDayTasks.length;
+  const highPriorityCount = dayTasks.filter(t => t.priority === 'high').length;
   const completionPct = dayTasks.length > 0 ? Math.round((completedCount / dayTasks.length) * 100) : 0;
 
   function handleAdd(e: React.FormEvent) {
@@ -92,6 +98,42 @@ export default function TaskManager({ state, actions }: TaskManagerProps) {
   function goToDate(delta: number) {
     setActiveDate(prev => addDays(prev, delta));
   }
+
+  // Handle task drag and drop reordering
+  const handleDrop = (targetTaskId: string) => {
+    if (!draggedTaskId || targetTaskId === draggedTaskId) return;
+    const currentTasks = [...state.tasks];
+    const fromIdx = currentTasks.findIndex(t => t.id === draggedTaskId);
+    const toIdx = currentTasks.findIndex(t => t.id === targetTaskId);
+    if (fromIdx === -1 || toIdx === -1) return;
+    const [moved] = currentTasks.splice(fromIdx, 1);
+    currentTasks.splice(toIdx, 0, moved);
+    actions.reorderTasks(currentTasks);
+    setDraggedTaskId(null);
+  };
+
+  // Move task up/down with button clicks
+  const handleMoveTask = (taskId: string, direction: 'up' | 'down') => {
+    const currentTasks = [...state.tasks];
+    const dayIndices = currentTasks
+      .map((t, idx) => (t.dueDate === activeDate && !t.completed ? idx : -1))
+      .filter(idx => idx !== -1);
+
+    const posInDay = dayIndices.findIndex(idx => currentTasks[idx].id === taskId);
+    if (posInDay === -1) return;
+
+    const targetPosInDay = direction === 'up' ? posInDay - 1 : posInDay + 1;
+    if (targetPosInDay < 0 || targetPosInDay >= dayIndices.length) return;
+
+    const idxA = dayIndices[posInDay];
+    const idxB = dayIndices[targetPosInDay];
+
+    const temp = currentTasks[idxA];
+    currentTasks[idxA] = currentTasks[idxB];
+    currentTasks[idxB] = temp;
+
+    actions.reorderTasks(currentTasks);
+  };
 
   // Build a 7-day strip centered around activeDate
   const dateStrip = useMemo(() => {
@@ -275,20 +317,39 @@ export default function TaskManager({ state, actions }: TaskManagerProps) {
 
       {/* ─── Filter bar ─── */}
       {dayTasks.length > 0 && (
-        <div className="flex gap-2">
-          {(['all', 'active', 'done'] as const).map(f => (
-            <button
-              key={f}
-              onClick={() => setFilterStatus(f)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all capitalize ${
-                filterStatus === f
-                  ? 'bg-forest-600/20 text-forest-300 border border-forest-500/30'
-                  : 'text-forest-600 hover:text-forest-400 border border-transparent'
-              }`}
-            >
-              {f} {f === 'all' ? `(${dayTasks.length})` : f === 'active' ? `(${dayTasks.length - completedCount})` : `(${completedCount})`}
-            </button>
-          ))}
+        <div className="flex flex-wrap gap-2">
+          {(['all', 'active', 'done', 'high'] as const).map(f => {
+            const count = f === 'all'
+              ? dayTasks.length
+              : f === 'active'
+              ? activeDayTasks.length
+              : f === 'done'
+              ? completedCount
+              : highPriorityCount;
+
+            const label = f === 'all'
+              ? 'All'
+              : f === 'active'
+              ? 'Pending'
+              : f === 'done'
+              ? 'Completed'
+              : '🔥 High Priority';
+
+            return (
+              <button
+                key={f}
+                type="button"
+                onClick={() => setFilterStatus(f)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  filterStatus === f
+                    ? 'bg-forest-600/30 text-forest-200 border border-forest-500/40 shadow-sm'
+                    : 'text-forest-500 hover:text-forest-300 border border-transparent hover:bg-elevated/40'
+                }`}
+              >
+                {label} ({count})
+              </button>
+            );
+          })}
         </div>
       )}
 
@@ -307,6 +368,11 @@ export default function TaskManager({ state, actions }: TaskManagerProps) {
                   onAddSubtask={(title) => !isPast && actions.addSubtask(task.id, title)}
                   onToggleSubtask={(subtaskId) => !isPast && actions.toggleSubtask(task.id, subtaskId)}
                   onDeleteSubtask={(subtaskId) => !isPast && actions.deleteSubtask(task.id, subtaskId)}
+                  onDragStart={() => setDraggedTaskId(task.id)}
+                  onDrop={() => handleDrop(task.id)}
+                  onMoveUp={() => handleMoveTask(task.id, 'up')}
+                  onMoveDown={() => handleMoveTask(task.id, 'down')}
+                  isDragging={draggedTaskId === task.id}
                   readonly={isPast}
                 />
               ))}
@@ -364,6 +430,11 @@ export default function TaskManager({ state, actions }: TaskManagerProps) {
                 onAddSubtask={(title) => !isPast && actions.addSubtask(task.id, title)}
                 onToggleSubtask={(subtaskId) => !isPast && actions.toggleSubtask(task.id, subtaskId)}
                 onDeleteSubtask={(subtaskId) => !isPast && actions.deleteSubtask(task.id, subtaskId)}
+                onDragStart={() => setDraggedTaskId(task.id)}
+                onDrop={() => handleDrop(task.id)}
+                onMoveUp={() => handleMoveTask(task.id, 'up')}
+                onMoveDown={() => handleMoveTask(task.id, 'down')}
+                isDragging={draggedTaskId === task.id}
                 readonly={isPast}
               />
             ))
@@ -397,6 +468,11 @@ function TaskRow({
   onAddSubtask,
   onToggleSubtask,
   onDeleteSubtask,
+  onDragStart,
+  onDrop,
+  onMoveUp,
+  onMoveDown,
+  isDragging,
   readonly,
 }: {
   task: Task;
@@ -406,6 +482,11 @@ function TaskRow({
   onAddSubtask: (title: string) => void;
   onToggleSubtask: (subtaskId: string) => void;
   onDeleteSubtask: (subtaskId: string) => void;
+  onDragStart?: () => void;
+  onDrop?: () => void;
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
+  isDragging?: boolean;
   readonly: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
@@ -430,11 +511,57 @@ function TaskRow({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, x: -20 }}
+      draggable={!readonly && !task.completed}
+      onDragStart={onDragStart}
+      onDragOver={(e) => {
+        if (!readonly && !task.completed) {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+        }
+      }}
+      onDrop={(e) => {
+        if (!readonly && !task.completed) {
+          e.preventDefault();
+          onDrop?.();
+        }
+      }}
       className={`glass-card overflow-hidden transition-all ${
         task.completed ? 'opacity-60' : ''
-      }`}
+      } ${isDragging ? 'opacity-30 border-forest-400 border-dashed scale-[0.98]' : ''}`}
     >
       <div className="p-3.5 flex items-center gap-3 group hover:border-glass-border-light transition-all">
+        {/* Drag handle & Move controls (active tasks only) */}
+        {!readonly && !task.completed && (
+          <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+            <span
+              className="cursor-grab active:cursor-grabbing text-forest-600 hover:text-forest-400 p-0.5"
+              title="Drag to reorder"
+            >
+              <GripVertical className="w-3.5 h-3.5" />
+            </span>
+            <div className="flex flex-col">
+              <button
+                type="button"
+                onClick={onMoveUp}
+                aria-label="Move task up"
+                title="Move up"
+                className="text-forest-600 hover:text-forest-300 p-0.5"
+              >
+                <ArrowUp className="w-2.5 h-2.5" />
+              </button>
+              <button
+                type="button"
+                onClick={onMoveDown}
+                aria-label="Move task down"
+                title="Move down"
+                className="text-forest-600 hover:text-forest-300 p-0.5"
+              >
+                <ArrowDown className="w-2.5 h-2.5" />
+              </button>
+            </div>
+          </div>
+        )}
+
         <button
           onClick={onToggle}
           disabled={readonly}
