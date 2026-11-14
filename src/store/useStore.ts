@@ -11,6 +11,7 @@ import { INITIAL_STATE, XP_PER_LEVEL, XP_PER_MINUTE, GRID_EXPANSION_FACTOR } fro
 import { checkNewAchievements } from '../lib/achievements';
 import { calculateStreak } from '../lib/analytics';
 import { soundEngine } from '../lib/sounds';
+import { haptics } from '../lib/haptics';
 
 const STORAGE_KEY = 'biome_pro_v3';
 
@@ -45,6 +46,7 @@ export const useStore = create<BiomeStore>()(
           if (stateWithAchievements.settings.soundEnabled) {
             soundEngine.playAchievementSound();
           }
+          haptics.celebration();
           set(prev => ({
             state: stateWithAchievements,
             newAchievements: [...prev.newAchievements, ...freshUnlocks],

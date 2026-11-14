@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Package, X, Maximize2, Info, ZoomIn, ZoomOut, RotateCcw, Move, RotateCcw as ReturnIcon, Trash2, Share2, Check, Copy, ChevronDown } from 'lucide-react';
 import type { AppState, AppActions, ForestItem, InventoryItem } from '../types';
 import { RARITY_COLORS, RARITY_BG, BIOME_THEMES } from '../constants';
+import { haptics } from '../lib/haptics';
 
 interface ForestViewProps {
   state: AppState;
@@ -126,14 +127,17 @@ export default function ForestView({ state, actions }: ForestViewProps) {
 
       actions.placeInventoryItem(placingItem.id, x, y);
       setPlacingItem(null);
+      haptics.success();
 
       if (willExpand) {
         setExpansionFlash(true);
+        haptics.celebration();
         setTimeout(() => setExpansionFlash(false), 3000);
       }
     } else if (movingItem) {
       actions.moveForestItem(movingItem.id, x, y);
       setMovingItem(null);
+      haptics.light();
     }
   }, [placingItem, movingItem, gridMap, livingItems.length, totalTiles, gridSize, actions]);
 

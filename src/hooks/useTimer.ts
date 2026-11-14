@@ -6,6 +6,7 @@ import type { AppState, AppActions, RewardItem, Task, ForestItem, FocusSession }
 import { REWARDS } from '../constants';
 import { soundEngine } from '../lib/sounds';
 import { sendAppNotification } from '../lib/notifications';
+import { haptics } from '../lib/haptics';
 
 export type TimerPhase = 'idle' | 'focusing' | 'break';
 
@@ -125,10 +126,11 @@ export function useTimer(state: AppState, actions: AppActions): { timer: TimerSt
     const currentSound = selectedSoundRef.current;
     const currentStartTime = sessionStartTimeRef.current;
 
-    // Play completion sound
+    // Play completion sound & tactile vibration
     if (currentState.settings.soundEnabled) {
       soundEngine.playCompletionChime();
     }
+    haptics.success();
     soundEngine.stop();
 
     // Item goes to INVENTORY
@@ -215,6 +217,7 @@ export function useTimer(state: AppState, actions: AppActions): { timer: TimerSt
     setPausesLeft(2);
     setPhase('focusing');
     setSessionStartTime(Date.now());
+    haptics.medium();
 
     // Start ambient sound
     if (selectedSound !== 'silence') {
@@ -232,11 +235,13 @@ export function useTimer(state: AppState, actions: AppActions): { timer: TimerSt
     setIsPaused(true);
     setPausesLeft(prev => prev - 1);
     soundEngine.stop();
+    haptics.warning();
   }, [isActive, isPaused, pausesLeft]);
 
   const resume = useCallback(() => {
     if (!isActive || !isPaused) return;
     setIsPaused(false);
+    haptics.light();
     if (selectedSound !== 'silence') {
       soundEngine.play(selectedSound as any, state.settings.ambientVolume);
     }
@@ -250,6 +255,7 @@ export function useTimer(state: AppState, actions: AppActions): { timer: TimerSt
     if (timerRef.current) clearInterval(timerRef.current);
 
     soundEngine.stop();
+    haptics.warning();
 
     if (state.settings.soundEnabled) {
       soundEngine.playFailureSound();
