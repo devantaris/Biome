@@ -11,7 +11,7 @@ import type { AppState, AppActions, ViewType } from '../types';
 import type { TimerActions } from '../hooks/useTimer';
 import { CATEGORIES, REWARDS } from '../constants';
 import { getTodayMinutes, getTodaySessions, getWeeklyStats, getGreeting, formatDayShort, formatDuration, getPersonalInsights } from '../lib/analytics';
-import { getDailyChallenges, getChallengeProgress } from './Challenges';
+import { getDailyChallenges, getChallengeProgress } from '../lib/challenges';
 
 interface DashboardProps {
   state: AppState;
