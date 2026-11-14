@@ -8,7 +8,7 @@ import {
   serverTimestamp, Timestamp,
 } from 'firebase/firestore';
 import { db } from './firebase';
-import type { AppState } from '../types';
+import type { AppState, ActiveRoom, RoomParticipant } from '../types';
 import { INITIAL_STATE } from '../constants';
 
 // ─── User data ────────────────────────────────
@@ -155,5 +155,106 @@ export async function lookupUserByFriendCode(code: string): Promise<LeaderboardR
   } catch (err) {
     console.warn('[Leaderboard] Friend code lookup failed:', err);
     return null;
+  }
+}
+
+// ─── Study Rooms ──────────────────────────────
+
+/** Subscribe to live study rooms from Firestore in real-time */
+export function subscribeToStudyRooms(
+  callback: (rooms: ActiveRoom[]) => void
+): () => void {
+  try {
+    const q = query(
+      collection(db, 'studyRooms'),
+      orderBy('createdAt', 'desc'),
+      limit(25)
+    );
+    return onSnapshot(q, (snap) => {
+      const liveRooms = snap.docs.map(d => ({
+        ...d.data(),
+        id: d.id,
+      })) as ActiveRoom[];
+      callback(liveRooms);
+    }, (err) => {
+      console.warn('[StudyRooms] Live snapshot error (using offline fallback):', err);
+    });
+  } catch (err) {
+    console.warn('[StudyRooms] Failed to subscribe to study rooms:', err);
+    return () => {};
+  }
+}
+
+/** Create a new study room in Firestore */
+export async function createStudyRoomInFirestore(room: ActiveRoom): Promise<void> {
+  try {
+    const ref = doc(db, 'studyRooms', room.id);
+    await setDoc(ref, {
+      ...room,
+      createdAt: room.createdAt ?? Date.now(),
+      updatedAt: serverTimestamp(),
+    });
+  } catch (err) {
+    console.warn('[StudyRooms] Failed to create room in cloud:', err);
+  }
+}
+
+/** Join a study room as a participant */
+export async function joinStudyRoomInFirestore(
+  roomId: string,
+  participant: RoomParticipant
+): Promise<void> {
+  try {
+    const ref = doc(db, 'studyRooms', roomId);
+    const snap = await getDoc(ref);
+    if (!snap.exists()) return;
+    const data = snap.data() as ActiveRoom;
+    const existing = data.participants || [];
+    const withoutMe = existing.filter(p => p.id !== participant.id);
+    await setDoc(ref, {
+      participants: [...withoutMe, participant],
+      updatedAt: serverTimestamp(),
+    }, { merge: true });
+  } catch (err) {
+    console.warn('[StudyRooms] Failed to join room:', err);
+  }
+}
+
+/** Leave a study room */
+export async function leaveStudyRoomInFirestore(
+  roomId: string,
+  participantId: string
+): Promise<void> {
+  try {
+    const ref = doc(db, 'studyRooms', roomId);
+    const snap = await getDoc(ref);
+    if (!snap.exists()) return;
+    const data = snap.data() as ActiveRoom;
+    const existing = data.participants || [];
+    const remaining = existing.filter(p => p.id !== participantId);
+    await setDoc(ref, {
+      participants: remaining,
+      updatedAt: serverTimestamp(),
+    }, { merge: true });
+  } catch (err) {
+    console.warn('[StudyRooms] Failed to leave room:', err);
+  }
+}
+
+/** Update room remaining seconds and active state */
+export async function updateStudyRoomStateInFirestore(
+  roomId: string,
+  remainingSeconds: number,
+  isActive: boolean
+): Promise<void> {
+  try {
+    const ref = doc(db, 'studyRooms', roomId);
+    await setDoc(ref, {
+      remainingSeconds,
+      isActive,
+      updatedAt: serverTimestamp(),
+    }, { merge: true });
+  } catch (err) {
+    console.warn('[StudyRooms] Failed to update room timer:', err);
   }
 }

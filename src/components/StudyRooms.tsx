@@ -2,42 +2,30 @@
 // Focus Forest — Co-working Study Rooms v3
 // Social accountability & synchronized focus
 // ============================================
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Users, Plus, Play, Pause, LogOut, Copy, Check,
   Sparkles, Clock, Volume2, Globe, Radio, ShieldAlert
 } from 'lucide-react';
-import type { AppState, AppActions, ViewType } from '../types';
+import type { AppState, AppActions, ViewType, ActiveRoom, RoomParticipant } from '../types';
 import type { TimerActions } from '../hooks/useTimer';
 import { AMBIENT_SOUNDS } from '../constants';
+import {
+  subscribeToStudyRooms,
+  createStudyRoomInFirestore,
+  joinStudyRoomInFirestore,
+  leaveStudyRoomInFirestore,
+  updateStudyRoomStateInFirestore,
+} from '../lib/firestore';
+
+export type { ActiveRoom, RoomParticipant };
 
 interface StudyRoomsProps {
   state: AppState;
   actions: AppActions;
   setView: (view: ViewType) => void;
   timerActions?: TimerActions;
-}
-
-export interface RoomParticipant {
-  id: string;
-  name: string;
-  avatar: string;
-  status: 'focusing' | 'break' | 'ready';
-  streak: number;
-}
-
-export interface ActiveRoom {
-  id: string;
-  code: string;
-  title: string;
-  hostName: string;
-  durationMinutes: number;
-  soundId: string;
-  isPrivate: boolean;
-  participants: RoomParticipant[];
-  isActive: boolean;
-  remainingSeconds: number;
 }
 
 const DEFAULT_ROOMS: ActiveRoom[] = [
@@ -111,7 +99,26 @@ export default function StudyRooms({ state, setView, timerActions }: StudyRoomsP
   const [newSound, setNewSound] = useState('forest');
   const [newIsPrivate, setNewIsPrivate] = useState(false);
 
-  // Persist rooms to localStorage
+  const myParticipantId = useMemo(() => {
+    return state.profile.friendCode || 'user-' + state.profile.name.replace(/\s+/g, '-').toLowerCase();
+  }, [state.profile.friendCode, state.profile.name]);
+
+  // Real-time Firestore sync listener
+  useEffect(() => {
+    const unsubscribe = subscribeToStudyRooms((liveRooms) => {
+      if (liveRooms.length > 0) {
+        setRooms(prev => {
+          const liveIds = new Set(liveRooms.map(r => r.id));
+          const localOnly = prev.filter(r => !liveIds.has(r.id) && r.id.startsWith('room-'));
+          const fallbackDefaults = DEFAULT_ROOMS.filter(d => !liveIds.has(d.id));
+          return [...liveRooms, ...localOnly, ...fallbackDefaults];
+        });
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // Persist rooms to localStorage as offline cache
   useEffect(() => {
     localStorage.setItem('biome_study_rooms', JSON.stringify(rooms));
   }, [rooms]);
@@ -128,19 +135,23 @@ export default function StudyRooms({ state, setView, timerActions }: StudyRoomsP
     const interval = setInterval(() => {
       setRooms(prev => prev.map(r => {
         if (r.id === currentRoom.id && r.isActive && r.remainingSeconds > 0) {
-          return { ...r, remainingSeconds: r.remainingSeconds - 1 };
+          const nextSec = r.remainingSeconds - 1;
+          if (r.hostName === state.profile.name && nextSec % 10 === 0) {
+            updateStudyRoomStateInFirestore(r.id, nextSec, r.isActive);
+          }
+          return { ...r, remainingSeconds: nextSec };
         }
         return r;
       }));
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [currentRoom]);
+  }, [currentRoom, state.profile.name]);
 
   // Join a room
-  const handleJoin = (room: ActiveRoom) => {
+  const handleJoin = async (room: ActiveRoom) => {
     const myParticipant: RoomParticipant = {
-      id: 'current-user',
+      id: myParticipantId,
       name: state.profile.name,
       avatar: state.profile.avatar,
       status: room.isActive ? 'focusing' : 'ready',
@@ -149,29 +160,32 @@ export default function StudyRooms({ state, setView, timerActions }: StudyRoomsP
 
     setRooms(prev => prev.map(r => {
       if (r.id === room.id) {
-        const withoutMe = r.participants.filter(p => p.id !== 'current-user');
+        const withoutMe = r.participants.filter(p => p.id !== myParticipantId);
         return { ...r, participants: [...withoutMe, myParticipant] };
       }
       return r;
     }));
 
     setActiveRoomId(room.id);
+    await joinStudyRoomInFirestore(room.id, myParticipant);
   };
 
   // Leave active room
-  const handleLeave = () => {
+  const handleLeave = async () => {
     if (!currentRoom) return;
+    const roomId = currentRoom.id;
     setRooms(prev => prev.map(r => {
-      if (r.id === currentRoom.id) {
-        return { ...r, participants: r.participants.filter(p => p.id !== 'current-user') };
+      if (r.id === roomId) {
+        return { ...r, participants: r.participants.filter(p => p.id !== myParticipantId) };
       }
       return r;
     }));
     setActiveRoomId(null);
+    await leaveStudyRoomInFirestore(roomId, myParticipantId);
   };
 
   // Create new room
-  const handleCreateRoom = (e: React.FormEvent) => {
+  const handleCreateRoom = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTitle.trim()) return;
 
@@ -186,9 +200,10 @@ export default function StudyRooms({ state, setView, timerActions }: StudyRoomsP
       isPrivate: newIsPrivate,
       isActive: true,
       remainingSeconds: newDuration * 60,
+      createdAt: Date.now(),
       participants: [
         {
-          id: 'current-user',
+          id: myParticipantId,
           name: state.profile.name,
           avatar: state.profile.avatar,
           status: 'focusing',
@@ -201,6 +216,7 @@ export default function StudyRooms({ state, setView, timerActions }: StudyRoomsP
     setActiveRoomId(newRoom.id);
     setShowCreateModal(false);
     setNewTitle('');
+    await createStudyRoomInFirestore(newRoom);
   };
 
   // Join by code

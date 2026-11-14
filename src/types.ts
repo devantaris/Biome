@@ -135,6 +135,29 @@ export interface LeaderboardEntry {
   friendCode?: string;
 }
 
+// ─── Study Rooms ──────────────────────────────
+export interface RoomParticipant {
+  id: string;
+  name: string;
+  avatar: string;
+  status: 'focusing' | 'break' | 'ready';
+  streak: number;
+}
+
+export interface ActiveRoom {
+  id: string;
+  code: string;
+  title: string;
+  hostName: string;
+  durationMinutes: number;
+  soundId: string;
+  isPrivate: boolean;
+  participants: RoomParticipant[];
+  isActive: boolean;
+  remainingSeconds: number;
+  createdAt?: number;
+}
+
 export interface DailyChallenge {
   id: string;
   title: string;
