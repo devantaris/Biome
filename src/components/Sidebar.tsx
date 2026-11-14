@@ -6,7 +6,7 @@ import { motion } from 'motion/react';
 import {
   BarChart3, Timer, ListTodo, LayoutGrid,
   Trophy, Users, Target, Settings as SettingsIcon,
-  Flame, CalendarDays, Package, LogOut, User as UserIcon, Radio, MessageSquare
+  Flame, CalendarDays, Package, LogOut, User as UserIcon, Radio, MessageSquare, Download
 } from 'lucide-react';
 import type { User } from 'firebase/auth';
 import type { AppState, ViewType } from '../types';
@@ -32,11 +32,35 @@ const NAV_ITEMS: { id: ViewType; label: string; icon: React.ReactNode }[] = [
   { id: 'rooms',        label: 'Study Rooms',  icon: <Radio /> },
 ];
 
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+}
+
 export default function Sidebar({ view, setView, state, user, onLogout }: SidebarProps) {
   const [showFeedback, setShowFeedback] = React.useState(false);
+  const [installPrompt, setInstallPrompt] = React.useState<BeforeInstallPromptEvent | null>(null);
   const xpInLevel = state.xp % XP_PER_LEVEL;
   const xpProgress = (xpInLevel / XP_PER_LEVEL) * 100;
   const inventoryCount = state.inventory?.length ?? 0;
+
+  React.useEffect(() => {
+    const handler = (e: Event) => {
+      e.preventDefault();
+      setInstallPrompt(e as BeforeInstallPromptEvent);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  const handleInstall = async () => {
+    if (!installPrompt) return;
+    await installPrompt.prompt();
+    const choice = await installPrompt.userChoice;
+    if (choice.outcome === 'accepted') {
+      setInstallPrompt(null);
+    }
+  };
 
   return (
     <aside className="w-64 bg-base border-r border-glass-border flex flex-col flex-shrink-0 overflow-hidden">
@@ -131,6 +155,17 @@ export default function Sidebar({ view, setView, state, user, onLogout }: Sideba
 
       {/* Settings (bottom) */}
       <div className="p-3 border-t border-glass-border space-y-1">
+        {installPrompt && (
+          <button
+            onClick={handleInstall}
+            className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold text-emerald-400 bg-emerald-950/40 hover:bg-emerald-900/40 border border-emerald-500/20 transition-all mb-1"
+          >
+            <span className="w-[18px] h-[18px] flex items-center justify-center">
+              <Download className="w-3.5 h-3.5" />
+            </span>
+            <span>Install Web App</span>
+          </button>
+        )}
         <NavItem
           icon={<SettingsIcon />}
           label="Settings"
